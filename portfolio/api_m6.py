@@ -32,7 +32,15 @@ try:
 except Exception:  # pragma: no cover
     MongoClient = None
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+# Add project root to path for imports
+try:
+    _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+except NameError:
+    # __file__ is not defined in some execution contexts
+    _project_root = os.path.abspath(os.path.join(os.getcwd(), ".."))
+
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
 
 
 DEFAULT_BASE_PRIOR = 0.05
@@ -201,7 +209,11 @@ class MongoBayesianMemory:
 
 def _load_m6():
     """Load milestone6_complete.py from the portfolio folder."""
-    portfolio_dir = os.path.dirname(__file__)
+    try:
+        portfolio_dir = os.path.dirname(__file__)
+    except NameError:
+        portfolio_dir = os.getcwd()
+    
     project_dir   = os.path.join(portfolio_dir, "..")
     for folder in [portfolio_dir, project_dir]:
         path = os.path.normpath(os.path.join(folder, "milestone6_complete.py"))

@@ -24,12 +24,24 @@ from datetime import datetime, timedelta
 
 warnings.filterwarnings("ignore")
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+# Add project root to path for imports
+try:
+    _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+except NameError:
+    # __file__ is not defined in some execution contexts
+    _project_root = os.path.abspath(os.path.join(os.getcwd(), ".."))
+
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
 
 
 def _load_m7():
     """Load milestone7_complete.py from the portfolio folder."""
-    portfolio_dir = os.path.dirname(__file__)
+    try:
+        portfolio_dir = os.path.dirname(__file__)
+    except NameError:
+        portfolio_dir = os.getcwd()
+    
     project_dir   = os.path.join(portfolio_dir, "..")
     for folder in [portfolio_dir, project_dir]:
         path = os.path.normpath(os.path.join(folder, "milestone7_complete.py"))

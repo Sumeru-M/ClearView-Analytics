@@ -21,7 +21,14 @@ import numpy as np
 import pandas as pd
 
 # Make sure portfolio package is importable when called from examples/
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+try:
+    _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+except NameError:
+    # __file__ is not defined in some execution contexts
+    _project_root = os.path.abspath(os.path.join(os.getcwd(), ".."))
+
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
 
 
 def get_portfolio_construction(
