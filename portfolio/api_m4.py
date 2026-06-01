@@ -23,7 +23,12 @@ import numpy as np
 import pandas as pd
 
 # Add project root to path for imports
-_project_root = os.path.abspath(os.path.join(os.path.dirname(__file__) or ".", ".."))
+try:
+    _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+except NameError:
+    # __file__ is not defined in some execution contexts
+    _project_root = os.path.abspath(os.path.join(os.getcwd(), ".."))
+
 if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
@@ -31,8 +36,6 @@ if _project_root not in sys.path:
 def _load_m4_scenarios():
     """Load scenario functions from examples.run_m4."""
     try:
-        # Try to import the module
-        import importlib
         run_m4 = importlib.import_module("examples.run_m4")
         return getattr(run_m4, "get_enhanced_scenarios", None), getattr(run_m4, "analyze_impact", None)
     except (ImportError, AttributeError, ModuleNotFoundError):
