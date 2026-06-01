@@ -18,26 +18,25 @@ Usage:
 
 import sys
 import os
-import types
-import importlib.util
+import importlib
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+# Add project root to path for imports
+_project_root = os.path.abspath(os.path.join(os.path.dirname(__file__) or ".", ".."))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
 
 
-def _load_m4_module():
-    """Load run_m4.py from the examples folder."""
-    examples_dir = os.path.join(os.path.dirname(__file__), "..", "examples")
-    path = os.path.normpath(os.path.join(examples_dir, "run_m4.py"))
-    if os.path.isfile(path):
-        spec = importlib.util.spec_from_file_location("run_m4_module", path)
-        mod = types.ModuleType("run_m4_module")
-        mod.__spec__ = spec
-        sys.modules["run_m4_module"] = mod
-        spec.loader.exec_module(mod)
-        return mod
-    return None
+def _load_m4_scenarios():
+    """Load scenario functions from examples.run_m4."""
+    try:
+        # Try to import the module
+        import importlib
+        run_m4 = importlib.import_module("examples.run_m4")
+        return getattr(run_m4, "get_enhanced_scenarios", None), getattr(run_m4, "analyze_impact", None)
+    except (ImportError, AttributeError, ModuleNotFoundError):
+        return None, None
 
 
 def get_scenario_analysis(
@@ -108,13 +107,10 @@ def get_scenario_analysis(
     )
 
     # Load scenario functions from run_m4.py
-    m4_module = _load_m4_module()
-    if m4_module:
-        get_enhanced_scenarios = getattr(m4_module, "get_enhanced_scenarios", None)
-        analyze_impact = getattr(m4_module, "analyze_impact", None)
-    else:
-        get_enhanced_scenarios = None
-        analyze_impact = None
+    get_enhanced_scenarios, analyze_impact = _load_m4_scenarios()
+    if not get_enhanced_scenarios or not analyze_impact:
+        result["error"] = "Scenario functions could not be loaded from examples.run_m4"
+        return result
 
     result = {
         "tickers":           tickers,
