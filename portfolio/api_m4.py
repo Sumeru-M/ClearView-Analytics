@@ -18,10 +18,26 @@ Usage:
 
 import sys
 import os
+import types
+import importlib.util
 import numpy as np
 import pandas as pd
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+
+def _load_m4_module():
+    """Load run_m4.py from the examples folder."""
+    examples_dir = os.path.join(os.path.dirname(__file__), "..", "examples")
+    path = os.path.normpath(os.path.join(examples_dir, "run_m4.py"))
+    if os.path.isfile(path):
+        spec = importlib.util.spec_from_file_location("run_m4_module", path)
+        mod = types.ModuleType("run_m4_module")
+        mod.__spec__ = spec
+        sys.modules["run_m4_module"] = mod
+        spec.loader.exec_module(mod)
+        return mod
+    return None
 
 
 def get_scenario_analysis(
@@ -91,12 +107,14 @@ def get_scenario_analysis(
         compute_cvar, compute_component_var,
     )
 
-    # Import the scenario library directly from the existing M4 run file
-    # by adding examples/ to path and importing get_enhanced_scenarios
-    _examples = os.path.join(os.path.dirname(__file__), "..", "examples")
-    if _examples not in sys.path:
-        sys.path.insert(0, _examples)
-    from examples.run_milestone4_ENHANCED import get_enhanced_scenarios, analyze_impact
+    # Load scenario functions from run_m4.py
+    m4_module = _load_m4_module()
+    if m4_module:
+        get_enhanced_scenarios = getattr(m4_module, "get_enhanced_scenarios", None)
+        analyze_impact = getattr(m4_module, "analyze_impact", None)
+    else:
+        get_enhanced_scenarios = None
+        analyze_impact = None
 
     result = {
         "tickers":           tickers,
@@ -159,6 +177,10 @@ def get_scenario_analysis(
         }
 
         # ── Scenario analysis ─────────────────────────────────────────────────
+        if not get_enhanced_scenarios or not analyze_impact:
+            result["error"] = "Scenario functions could not be loaded from examples/run_m4.py"
+            return result
+        
         all_scenarios = get_enhanced_scenarios()
         engine        = ScenarioEngine(mu, sigma)
 

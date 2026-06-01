@@ -97,8 +97,8 @@ def get_institutional_optimisation(
 
     # ── Imports from existing M5 modules ─────────────────────────────────────
     from portfolio.portfolio_complete import load_price_data, compute_daily_returns, normalize_tickers_for_market_data
-    from portfolio.constraints import build_institutional_constraints
-    from portfolio.optimization_engine import (
+    from portfolio.internal.constraints import build_institutional_constraints
+    from portfolio.internal.optimization_engine import (
         optimize_mean_variance,
         optimize_minimum_variance,
         optimize_cvar,
@@ -107,20 +107,17 @@ def get_institutional_optimisation(
         optimize_multi_objective,
         compute_efficient_frontier,
     )
-    from portfolio.robust_optimizer import (
+    from portfolio.internal.robust_optimizer import (
         compute_ledoit_wolf_shrinkage_fixed,
         optimize_worst_case,
         build_stress_scenarios_from_engine,
         optimize_scenario_weighted,
     )
-    from portfolio.allocation_scorer import enrich_allocation_result
-    from portfolio.risk_contribution import build_risk_attribution_report
-
-    # Import sector mapping from M5 run file
-    _examples = os.path.join(os.path.dirname(__file__), "..", "examples")
-    if _examples not in sys.path:
-        sys.path.insert(0, _examples)
-    from examples.run_milestone5 import get_sector
+    from portfolio.internal.allocation_scorer import enrich_allocation_result
+    from portfolio.internal.risk_contribution import build_risk_attribution_report
+    
+    # Import get_sector from portfolio_complete
+    from portfolio.portfolio_complete import get_sector
 
     result = {
         "tickers":               tickers,
