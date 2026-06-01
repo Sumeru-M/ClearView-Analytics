@@ -13,16 +13,40 @@ All calculations use log returns for consistency.
 
 import pandas as pd
 import numpy as np
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union, TypedDict
 from datetime import datetime, timedelta
 from scipy.optimize import newton
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from portfolio.constants import TRADING_DAYS_PER_YEAR, RISK_FREE_RATE_ANNUAL
-from portfolio.types import PerformanceMetrics, ProjectedValue
+# Try to handle __file__ not defined in some contexts
+try:
+    _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+except NameError:
+    _project_root = os.path.abspath(os.path.join(os.getcwd(), '..'))
+
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
+# Define constants that would have been imported
+TRADING_DAYS_PER_YEAR = 252
+RISK_FREE_RATE_ANNUAL = 0.07
+
+# Define types that would have been imported
+class PerformanceMetrics(TypedDict, total=False):
+    """Performance metrics type definition."""
+    return_: float
+    volatility: float
+    sharpe_ratio: float
+    cagr: float
+
+class ProjectedValue(TypedDict, total=False):
+    """Projected value type definition."""
+    mean: float
+    std: float
+    percentile_5: float
+    percentile_95: float
 
 
 class PerformanceAnalyzer:
