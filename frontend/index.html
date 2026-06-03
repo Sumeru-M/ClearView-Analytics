@@ -54,6 +54,22 @@
   --crisis:#ef5350;
   --trans:#8a95a8;
   
+  /* Aliases for common usage */
+  --amber: #f9a825;
+  --green: #17b981;
+  --red: #ef5350;
+  --cyan: #2196f3;
+  --accent2: #8b84ff;
+  
+  /* Data visualization colors */
+  --corr-diag: rgba(108,99,255,.15);
+  --corr-neg: rgba(255,77,109,.35);
+  --corr-neg-medium: rgba(255,77,109,.04);
+  --corr-neg-half: rgba(255,77,109,.5);
+  --success-bg-light: rgba(34,217,132,.04);
+  --danger-bg-light: rgba(255,77,109,.04);
+  --accent-bg-light: rgba(108,99,255,.1);
+  
   /* Spacing (8px base) */
   --space-1:4px;
   --space-2:8px;
@@ -118,7 +134,7 @@ h1,h2,h3,h4,h5{font-family:'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI
 .backend-badge{display:flex;align-items:center;gap:var(--space-2);font-size:12px;color:var(--text3)}
 .backend-dot{width:7px;height:7px;border-radius:50%;background:var(--success)}
 .backend-dot.offline{background:var(--danger)}
-.offline-banner{background:var(--danger);color:#fff;padding:var(--space-2) var(--space-6);font-size:13px;text-align:center;display:flex;align-items:center;justify-content:center;gap:var(--space-3)}
+.offline-banner{background:var(--danger);color:var(--text-inv);padding:var(--space-2) var(--space-6);font-size:13px;text-align:center;display:flex;align-items:center;justify-content:center;gap:var(--space-3)}
 
 .page{flex:1;padding:var(--space-7) var(--space-7);max-width:1200px;width:100%}
 @media(max-width:768px){.sidebar{display:none}.page{padding:var(--space-4)}}
@@ -153,7 +169,7 @@ label{font-size:12px;color:var(--text3);margin-bottom:var(--space-1);display:blo
 
 /* Buttons */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);padding:var(--space-2) var(--space-4);border-radius:var(--radius-sm);font-family:'Inter', sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all var(--transition);outline:none}
-.btn-primary{background:var(--accent);color:#fff;box-shadow:var(--shadow-sm)}
+.btn-primary{background:var(--accent);color:var(--text-inv);box-shadow:var(--shadow-sm)}
 .btn-primary:hover{background:var(--accent-light);box-shadow:var(--shadow-md)}
 .btn-primary:active{background:var(--accent-dark)}
 .btn-primary:disabled{opacity:.5;cursor:not-allowed}
@@ -865,7 +881,7 @@ function Tabs({ tabs, active, onChange }) {
 
 function WeightDonut({ weights, title }) {
   const entries = Object.entries(weights || {}).sort((a, b) => b[1] - a[1]);
-  const colors = ["#6c63ff","#22d984","#00d4ff","#ffb347","#ff4d6d","#8b84ff","#a3ffd4","#ffe083"];
+  const colors = ["var(--accent)","var(--success)","var(--info)","var(--warning)","var(--danger)","var(--accent2)","var(--cyan)","var(--bull)"];
   const total = entries.reduce((s, [, v]) => s + v, 0);
   // Simple SVG donut
   const r = 56, cx = 70, cy = 70, stroke = 18;
@@ -1335,7 +1351,7 @@ function Portfolio() {
                         const isDiag = row === col;
                         return (
                           <td key={col} className="corr-cell"
-                            style={{ background: isDiag ? "rgba(108,99,255,.15)" : `rgba(255,77,109,${val * 0.35})`, color: "var(--text)" }}>
+                            style={{ background: isDiag ? "var(--corr-diag)" : `var(--corr-neg)`, color: "var(--text)" }}>
                             {val.toFixed(2)}
                           </td>
                         );
@@ -1689,7 +1705,7 @@ function Optimisation() {
                   <thead><tr><th>Ticker</th><th className="td-right">Current</th><th className="td-right">Target</th><th className="td-right">Action</th><th className="td-right">₹ Delta</th></tr></thead>
                   <tbody>
                     {(d.rebalance_actions || []).map(ra => (
-                      <tr key={ra.ticker} style={{ background: ra.action === "BUY" ? "rgba(34,217,132,.04)" : ra.action === "SELL" ? "rgba(255,77,109,.04)" : "" }}>
+                      <tr key={ra.ticker} style={{ background: ra.action === "BUY" ? "var(--success-bg-light)" : ra.action === "SELL" ? "var(--danger-bg-light)" : "" }}>
                         <td className="td-mono">{ra.ticker}</td>
                         <td className="td-right td-mono">{(ra.current_pct * 100).toFixed(1)}%</td>
                         <td className="td-right td-mono">{(ra.target_pct * 100).toFixed(1)}%</td>
@@ -2230,7 +2246,7 @@ function Regime() {
                         <td style={{ fontSize: 11, color: "var(--text3)", whiteSpace: "nowrap", paddingRight: 8 }}>{from}</td>
                         {Object.entries(row).map(([to, val]) => (
                           <td key={to} className="tm-cell" style={{
-                            background: from === to ? "rgba(108,99,255,.15)" : `rgba(255,77,109,${val * 0.5})`,
+                            background: from === to ? "var(--corr-diag)" : `var(--corr-neg-half)`,
                           }} title={`${from} → ${to}: ${(val * 100).toFixed(2)}%`}>
                             {(val * 100).toFixed(1)}%
                           </td>
@@ -2291,7 +2307,7 @@ function Regime() {
                 ].join(" ");
                 return (
                   <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", maxHeight: 200 }}>
-                    <path d={areaPath} fill="rgba(108,99,255,.1)" />
+                    <path d={areaPath} fill="var(--accent-bg-light)" />
                     <path d={linePath} fill="none" stroke="var(--accent)" strokeWidth={2} />
                     <text x={PAD.l - 4} y={PAD.t + 4} textAnchor="end" fontSize={10} fill="var(--text3)">{yMax.toFixed(1)}%</text>
                     <text x={PAD.l - 4} y={H - PAD.b} textAnchor="end" fontSize={10} fill="var(--text3)">{yMin.toFixed(1)}%</text>
