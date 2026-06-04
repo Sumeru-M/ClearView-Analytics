@@ -1,0 +1,77 @@
+# Render Ignore File
+# Files and directories to exclude from Render deployment
+
+# Development
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+.coverage
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git
+.git/
+.gitignore
+.github/
+
+# Documentation
+*.md
+docs/
+
+# Testing
+tests/
+test_*.py
+*_test.py
+
+# Notebooks
+notebooks/
+*.ipynb
+
+# Examples
+examples/
+
+# Cache
+.tmp_mpl/
+data_cache/
+__pycache__/
+
+# Temporary files
+*.tmp
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker (not needed on Render)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Vercel (not needed on Render)
+vercel.json
+.vercel/
+
+# Path directory (not needed)
+path/

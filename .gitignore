@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+build/
+dist/
+*.egg-info/
+
+# Data & Artifacts (Clean Repo)
+data_cache/
+artifacts/
+*.csv
+*.png
+*.json
+!examples/*.json
+!docs/*.ipynb
+
+# Vercel & Cloud
+.vercel
+.vercelignore
+.env
+.env.local
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*~
