@@ -61,8 +61,13 @@ The platform is fully optimized for **Vercel** via `app.py` and `vercel.json`.
 | Variable | Description |
 |----------|-------------|
 | `AUTH_SECRET` | Secure JWT key for the integrated identity system. |
+| `SUPABASE_URL` | Supabase project URL for persistent login storage. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key used by the backend auth API. |
+| `SUPABASE_USERS_TABLE` | Optional users table name. Defaults to `users`. |
 | `CORS_ORIGINS` | Permitted domains for cross-origin resource sharing. |
 | `MONGODB_URI` | *(Optional)* Connection string for persistent Bayesian memory storage. |
+
+Run `docs/supabase_auth.sql` in the Supabase SQL editor before deploying auth.
 
 ---
 

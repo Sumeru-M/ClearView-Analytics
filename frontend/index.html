@@ -7,8 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
-<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.8.0/Recharts.js"></script>
 <style>
@@ -98,7 +98,7 @@ body{overflow-x:hidden;line-height:1.5;-webkit-font-smoothing:antialiased}
 
 /* ── CONTENT ── */
 .content{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
-.page{padding:24px;max-width:1280px;width:100%;animation:pageIn .2s ease}
+.page{padding:24px;max-width:1280px;width:100%;margin:0 auto;animation:pageIn .2s ease}
 @keyframes pageIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
 /* ── OFFLINE BANNER ── */
@@ -112,8 +112,8 @@ body{overflow-x:hidden;line-height:1.5;-webkit-font-smoothing:antialiased}
 .page-divider{width:40px;height:2px;background:linear-gradient(to right,var(--accent),var(--accent2));border-radius:2px;margin-top:12px}
 
 /* ── CARDS ── */
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r3);padding:20px;transition:border-color var(--t)}
-.card:hover{border-color:var(--border2)}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.015),transparent 70%),var(--bg2);border:1px solid var(--border);border-radius:var(--r3);padding:20px;transition:border-color var(--t),box-shadow var(--t)}
+.card:hover{border-color:var(--border2);box-shadow:0 10px 34px rgba(0,0,0,.18)}
 .card-sm{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px}
 .card-inset{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:14px}
 .card-accent{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r3);padding:20px}
@@ -145,7 +145,7 @@ input[type="range"]{padding:0;height:4px;border-radius:99px;cursor:pointer;accen
 input[type="checkbox"]{width:14px;height:14px;cursor:pointer;accent-color:var(--accent)}
 
 /* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 14px;border-radius:var(--r2);font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all var(--t);outline:none;user-select:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:7px 14px;border-radius:var(--r2);font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all var(--t);outline:none;user-select:none}
 .btn-primary{background:var(--accent);color:var(--bg);letter-spacing:.01em}
 .btn-primary:hover:not(:disabled){background:#5facff;box-shadow:0 0 16px rgba(59,158,255,.3)}
 .btn-primary:disabled{opacity:.4;cursor:not-allowed}
@@ -337,7 +337,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .gl-term strong{color:var(--accent);display:block;font-weight:600;margin-bottom:2px}
 
 /* ── RESPONSIVE ── */
-@media(max-width:600px){.g2{grid-template-columns:1fr}.auth-wrap{grid-template-columns:1fr}}
+@media(max-width:600px){.g2{grid-template-columns:1fr}.auth-wrap{grid-template-columns:1fr}.topbar{height:auto;min-height:52px;align-items:flex-start;padding:10px 12px;flex-wrap:wrap}.topbar-pills{order:3;flex-basis:100%}.topbar-right{width:100%;justify-content:space-between}.user-chip{min-width:0;max-width:65%;overflow:hidden}.page-title{font-size:20px}.card{padding:16px}.glossary-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -352,6 +352,7 @@ const AUTH_PROFILE = "cv-auth-profile";
 
 // ── API BASE ───────────────────────────────────────────────────────────────────
 const BASE = window.__VITE_API_BASE_URL ||
+  localStorage.getItem("cv-api-base") ||
   (window.location.protocol.startsWith("http") ? window.location.origin : "http://localhost:8000");
 
 function authHeader(skip) {
@@ -592,6 +593,7 @@ function ToggleGroup({options,value,onChange}) {
 }
 
 function TickerInput({tickers,onChange}) {
+  tickers = Array.isArray(tickers) ? tickers : [];
   const [val,setVal]=useState(""); const ref=useRef();
   function add() {
     const n=normTicker(val); if (!n) return;
@@ -779,7 +781,7 @@ function LoginGate({onAuthenticated,authError}) {
             <button className={`tg-btn${mode==="signup"?" active":""}`} onClick={()=>{setMode("signup");setError("");}}>Sign Up</button>
           </div>
           <form className="auth-form" onSubmit={submit}>
-            <div><label>Username</label><input value={username} onChange={e=>setUsername(e.target.value)} placeholder="your_username" autoComplete="username"/></div>
+            <div><label>Username or Email</label><input value={username} onChange={e=>setUsername(e.target.value)} placeholder="your_username or name@domain.com" autoComplete="username"/></div>
             {mode==="signup"&&<div><label>Email</label><input value={email} onChange={e=>setEmail(e.target.value)} placeholder="name@domain.com" autoComplete="email"/></div>}
             <div><label>Password</label><input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="At least 8 characters" autoComplete={mode==="signup"?"new-password":"current-password"}/></div>
             <label className="consent-row">
@@ -790,7 +792,7 @@ function LoginGate({onAuthenticated,authError}) {
             <button className="btn btn-primary btn-full" type="submit" disabled={loading}>
               {loading?"Please wait…":mode==="signup"?"Create Account":"Sign In"}
             </button>
-            <p className="auth-note">{mode==="signup"?"Create once, sign in from any device.":"Enter your credentials to access the platform."}</p>
+            <p className="auth-note">{mode==="signup"?"Create once, sign in from any device.":"Use your username or email to access the platform."}</p>
           </form>
         </section>
       </div>
@@ -1322,7 +1324,6 @@ function Optimisation() {
 
       <div className="card" style={{marginBottom:16}}>
         <div className="form-grid" style={{marginBottom:12}}>
-          <div style={{gridColumn:"1 / -1"}}><label>Tickers</label><TickerInput tickers={t=>{setTickers(t);setWeights(weightsFromEntries(store.portfolioEntries,t));}} /></div>
           <div style={{gridColumn:"1 / -1"}}><label>Tickers</label><TickerInput tickers={tickers} onChange={t=>{setTickers(t);setWeights(weightsFromEntries(store.portfolioEntries,t));}}/></div>
           <div><label>Portfolio Value (₹)</label><input type="number" value={pv} onChange={e=>setPv(+e.target.value)}/></div>
           <div><label>Risk-Free Rate (%)</label><input type="number" value={rf} onChange={e=>setRf(+e.target.value)} step="0.5"/></div>
@@ -1388,7 +1389,7 @@ function Optimisation() {
                 <span style={{fontSize:12,color:"var(--text3)"}}>Ledoit-Wolf shrinkage = </span>
                 <span style={{fontFamily:"var(--font-mono)",fontSize:13,color:"var(--accent)"}}>{fmtM(d.ledoit_wolf_delta,4)}</span>
                 <p style={{fontSize:12,color:"var(--text4)",marginTop:4}}>
-                  {d.ledoit_wolf_delta<0.3?"Light":"d.ledoit_wolf_delta<0.6?\"Medium\":\"Strong\""} covariance smoothing applied.
+                  {d.ledoit_wolf_delta<0.3?"Light":d.ledoit_wolf_delta<0.6?"Medium":"Strong"} covariance smoothing applied.
                 </p>
               </div>
             </div>
@@ -1917,7 +1918,7 @@ function Settings({authUser,onLogout}) {
   const [store,setState]=useStore();
   const [backendUrl,setBackendUrl]=useState(BASE);
   const [saved,setSaved]=useState(false);
-  function save() { setSaved(true); setTimeout(()=>setSaved(false),2000); }
+  function save() { localStorage.setItem("cv-api-base",backendUrl.trim()); setSaved(true); setTimeout(()=>setSaved(false),2000); }
 
   return (
     <div className="page fade-in">

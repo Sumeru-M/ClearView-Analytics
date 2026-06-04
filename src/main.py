@@ -6,6 +6,9 @@ import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+from urllib.error import HTTPError, URLError
+from urllib.parse import quote
+from urllib.request import Request, urlopen
 
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,6 +31,9 @@ AUTH_ALGORITHM = "HS256"
 AUTH_TOKEN_TTL_SECONDS = int(os.getenv("AUTH_TOKEN_TTL_SECONDS", "604800"))  # 7 days
 AUTH_SECRET = os.getenv("AUTH_SECRET", "change-this-dev-secret").strip() or "change-this-dev-secret"
 AUTH_PWD_CONTEXT = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip().rstrip("/")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+SUPABASE_USERS_TABLE = os.getenv("SUPABASE_USERS_TABLE", "users").strip() or "users"
 
 
 def _cors_origins() -> list[str]:
@@ -53,7 +59,75 @@ def _db_connect() -> sqlite3.Connection:
     return conn
 
 
+def _using_supabase() -> bool:
+    return bool(SUPABASE_URL and SUPABASE_KEY)
+
+
+def _supabase_headers(extra: dict[str, str] | None = None) -> dict[str, str]:
+    return {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        **(extra or {}),
+    }
+
+
+def _supabase_request(path: str, method: str = "GET", body: bytes | None = None) -> Any:
+    req = Request(
+        f"{SUPABASE_URL}/rest/v1/{path}",
+        data=body,
+        method=method,
+        headers=_supabase_headers({"Prefer": "return=minimal"} if method != "GET" else None),
+    )
+    try:
+        with urlopen(req, timeout=12) as res:
+            raw = res.read().decode("utf-8")
+    except HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        raise HTTPException(status_code=502, detail=f"Supabase error: {detail}") from exc
+    except URLError as exc:
+        raise HTTPException(status_code=502, detail=f"Supabase unreachable: {exc.reason}") from exc
+    if not raw:
+        return None
+    import json
+
+    return json.loads(raw)
+
+
+def _sb_eq(value: str) -> str:
+    return quote(f"eq.{value}", safe="")
+
+
+def _sb_select_user(column: str, value: str) -> dict[str, Any] | None:
+    if not _using_supabase():
+        return None
+    cols = "username,email,created_at,updated_at,password_hash"
+    rows = _supabase_request(
+        f"{SUPABASE_USERS_TABLE}?{column}={_sb_eq(value)}&select={cols}&limit=1"
+    )
+    return rows[0] if rows else None
+
+
+def _sb_insert_user(username: str, email: str, password_hash: str, now: int) -> None:
+    import json
+
+    payload = {
+        "username": username,
+        "email": email,
+        "password_hash": password_hash,
+        "created_at": now,
+        "updated_at": now,
+    }
+    _supabase_request(
+        SUPABASE_USERS_TABLE,
+        method="POST",
+        body=json.dumps(payload).encode("utf-8"),
+    )
+
+
 def _init_auth_db() -> None:
+    if _using_supabase():
+        return
     with _db_connect() as conn:
         conn.execute(
             """
@@ -160,13 +234,37 @@ def _parse_token(token: str) -> dict[str, Any]:
         raise HTTPException(status_code=401, detail="Unauthorized: invalid token") from exc
 
 
-def _get_user_by_username(username: str) -> sqlite3.Row | None:
+def _get_user_by_username(username: str) -> Any | None:
+    if _using_supabase():
+        return _sb_select_user("username", username)
     with _db_connect() as conn:
         row = conn.execute(
             "SELECT username, email, created_at, updated_at, password_hash FROM users WHERE username = ?",
             (username,),
         ).fetchone()
     return row
+
+
+def _get_user_by_email(email: str) -> Any | None:
+    if _using_supabase():
+        return _sb_select_user("email", email)
+    with _db_connect() as conn:
+        row = conn.execute(
+            "SELECT username, email, created_at, updated_at, password_hash FROM users WHERE email = ?",
+            (email,),
+        ).fetchone()
+    return row
+
+
+def _row_get(row: Any, key: str, default: Any = None) -> Any:
+    if row is None:
+        return default
+    if isinstance(row, dict):
+        return row.get(key, default)
+    try:
+        return row[key]
+    except Exception:
+        return default
 
 
 def _auth_user(authorization: str | None = Header(default=None)) -> str:
@@ -306,7 +404,8 @@ def auth_config() -> JSONResponse:
     return _safe_json(
         {
             "auth_mode": "jwt_username_password",
-            "configured": True,
+            "storage": "supabase" if _using_supabase() else "sqlite",
+            "configured": _using_supabase() or True,
             "message": "Username and password authentication is enabled.",
         }
     )
@@ -331,49 +430,52 @@ def auth_register(req: AuthRegisterRequest) -> JSONResponse:
     if _get_user_by_username(username):
         return _safe_json({"error": "That username is already taken."}, status_code=409)
 
-    with _db_connect() as conn:
-        by_email = conn.execute(
-            "SELECT username FROM users WHERE email = ?",
-            (email,),
-        ).fetchone()
-        if by_email:
-            return _safe_json({"error": "That email is already registered."}, status_code=409)
+    if _get_user_by_email(email):
+        return _safe_json({"error": "That email is already registered."}, status_code=409)
 
-        now = int(time.time())
-        cols = {
-            str(row[1])
-            for row in conn.execute("PRAGMA table_info(users)").fetchall()
-        }
-        if "full_name" in cols:
-            conn.execute(
-                "INSERT INTO users(username, email, full_name, password_hash, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
-                (username, email, username, _hash_password(password), now, now),
-            )
-        else:
-            conn.execute(
-                "INSERT INTO users(username, email, password_hash, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
-                (username, email, _hash_password(password), now, now),
-            )
-        conn.commit()
+    now = int(time.time())
+    password_hash = _hash_password(password)
+    if _using_supabase():
+        _sb_insert_user(username, email, password_hash, now)
+    else:
+        with _db_connect() as conn:
+            cols = {
+                str(row[1])
+                for row in conn.execute("PRAGMA table_info(users)").fetchall()
+            }
+            if "full_name" in cols:
+                conn.execute(
+                    "INSERT INTO users(username, email, full_name, password_hash, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+                    (username, email, username, password_hash, now, now),
+                )
+            else:
+                conn.execute(
+                    "INSERT INTO users(username, email, password_hash, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+                    (username, email, password_hash, now, now),
+                )
+            conn.commit()
 
     return _safe_json({"message": "Account created successfully."}, status_code=201)
 
 
 @app.post("/api/auth/login")
 def auth_login(req: AuthLoginRequest) -> JSONResponse:
-    username = _normalize_username(req.username)
-    row = _get_user_by_username(username)
-    if not row or not _verify_password(req.password, str(row["password_hash"])):
+    identifier = _normalize_username(req.username)
+    row = _get_user_by_email(identifier) if "@" in identifier else _get_user_by_username(identifier)
+    if not row and "@" not in identifier:
+        row = _get_user_by_email(identifier)
+    if not row or not _verify_password(req.password, str(_row_get(row, "password_hash", ""))):
         return _safe_json({"error": "Username or password is incorrect."}, status_code=401)
 
+    username = str(_row_get(row, "username", identifier))
     token = _make_token(username)
     return _safe_json(
         {
             "token": token,
             "user": {
-                "username": str(row["username"]),
-                "email": str(row["email"]),
-                "created_at": int(row["created_at"]),
+                "username": username,
+                "email": str(_row_get(row, "email", "")),
+                "created_at": int(_row_get(row, "created_at", 0) or 0),
             },
         }
     )
@@ -387,9 +489,9 @@ def auth_me(username: str = Depends(_auth_user)) -> JSONResponse:
     return _safe_json(
         {
             "user": {
-                "username": str(row["username"]),
-                "email": str(row["email"]),
-                "created_at": int(row["created_at"]),
+                "username": str(_row_get(row, "username", "")),
+                "email": str(_row_get(row, "email", "")),
+                "created_at": int(_row_get(row, "created_at", 0) or 0),
             }
         }
     )
