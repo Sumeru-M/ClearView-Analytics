@@ -308,16 +308,25 @@ tr:hover td{background:var(--bg3)}
 .tm-head{font-size:10px;color:var(--text3);text-align:center;padding:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px}
 
 /* Auth + onboarding */
-.auth-shell{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--bg)}
-.auth-wrap{width:min(940px,100%);display:grid;grid-template-columns:1.1fr .9fr;gap:18px}
-.auth-panel{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px}
-.auth-title{font-size:30px;line-height:1.2;margin-bottom:8px;color:var(--text)}
-.auth-sub{font-size:14px;color:var(--text2);margin-bottom:14px}
-.auth-disclaimer{border-left:3px solid var(--warning);background:rgba(249,168,37,.08);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--text2);line-height:1.55}
-.auth-meta{margin-top:16px;font-size:12px;color:var(--text3)}
+.auth-shell{min-height:100vh;display:grid;place-items:center;padding:20px;background:var(--bg);position:relative;overflow:hidden}
+.auth-shell::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(74,144,226,.05) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+.auth-wrap{width:min(880px,100%);display:grid;grid-template-columns:1.15fr .85fr;gap:16px}
+.auth-panel{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;position:relative}
+.auth-brand{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.auth-logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--text-inv);box-shadow:0 0 20px rgba(74,144,226,.28)}
+.auth-logo-text{font-size:16px;font-weight:700;color:var(--text);line-height:1}
+.auth-logo-sub{font-size:10px;color:var(--text3);letter-spacing:.04em}
+.auth-title{font-size:26px;font-weight:700;line-height:1.2;margin-bottom:10px;color:var(--text)}
+.auth-title em{font-family:Georgia,serif;font-style:italic;color:var(--accent-light)}
+.auth-sub{font-size:13px;color:var(--text3);line-height:1.6;margin-bottom:16px}
+.auth-disclaimer{border-left:3px solid var(--warning);background:rgba(249,168,37,.08);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--text2);line-height:1.55;margin-bottom:16px}
+.auth-features{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.auth-feature{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text3)}
+.auth-feature-icon{width:20px;height:20px;border-radius:4px;background:rgba(74,144,226,.08);border:1px solid rgba(74,144,226,.2);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px}
 .auth-form{display:flex;flex-direction:column;gap:12px}
-.auth-error{font-size:12px;color:var(--danger)}
-.auth-note{font-size:12px;color:var(--text3);line-height:1.5}
+.auth-error{font-size:12px;color:var(--danger);padding:8px 10px;background:rgba(239,83,80,.08);border-radius:4px}
+.auth-note{font-size:12px;color:var(--text4);line-height:1.5}
+.consent-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);margin:4px 0 2px;text-transform:none;letter-spacing:0}
 
 /* CSV import */
 .import-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px}
@@ -817,15 +826,33 @@ function LoginGate({ onAuthenticated, authError }) {
     <div className="auth-shell">
       <div className="auth-wrap">
         <section className="auth-panel">
-          <h1 className="auth-title">ClearView Analytics Platform</h1>
-          <p className="auth-sub">Professional portfolio analytics with clear insights, designed for fast and confident decisions.</p>
-          <div className="auth-disclaimer">
-            Important: This platform does not give financial advice. It only shows analytics.
-            Any investment decision you make is fully your responsibility.
+          <div className="auth-brand">
+            <div className="auth-logo-icon">CV</div>
+            <div>
+              <div className="auth-logo-text">ClearView Analytics</div>
+              <div className="auth-logo-sub">PORTFOLIO INTELLIGENCE</div>
+            </div>
           </div>
-          <p className="auth-meta">
-            You must accept this disclaimer before sign in or sign up.
-          </p>
+          <h1 className="auth-title">Institutional-grade<br/><em>portfolio analytics</em></h1>
+          <p className="auth-sub">Built for Indian equity markets. Stress-test your holdings, optimise allocations, and decode regime shifts all in one place.</p>
+          <div className="auth-disclaimer">
+            <strong>Important Disclaimer</strong><br/>
+            ClearView Analytics provides analytics only and does not constitute financial advice. All investment decisions are solely your responsibility.
+          </div>
+          <div className="auth-features">
+            {[
+              ["◎", "Performance & Risk - Efficient frontier, VaR, factor decomposition"],
+              ["⚡", "Stress Testing - 13 crisis scenarios including geopolitical and rate shocks"],
+              ["⬡", "Allocation Strategy - 6 institutional optimisation methods"],
+              ["🔐", "Trade & Security - PQC ML-DSA-III signed transactions with Bayesian defence"],
+              ["◉", "Regime Outlook - HMM + GARCH market state detection"],
+            ].map(([icon, text]) => (
+              <div key={icon} className="auth-feature">
+                <div className="auth-feature-icon">{icon}</div>
+                <span>{text}</span>
+              </div>
+            ))}
+          </div>
         </section>
         <section className="auth-panel">
           <div className="toggle-group" style={{ marginBottom: 14 }}>
@@ -834,8 +861,8 @@ function LoginGate({ onAuthenticated, authError }) {
           </div>
           <form className="auth-form" onSubmit={submit}>
             <div>
-              <label>Username</label>
-              <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Choose a username" autoComplete="username" />
+              <label>Username or Email</label>
+              <input value={username} onChange={e => setUsername(e.target.value)} placeholder="your_username or name@domain.com" autoComplete="username" />
             </div>
             {mode === "signup" && (
               <div>
@@ -847,18 +874,18 @@ function LoginGate({ onAuthenticated, authError }) {
               <label>Password</label>
               <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" autoComplete={mode === "signup" ? "new-password" : "current-password"} />
             </div>
-            <label style={{ display: "flex", alignItems: "center", gap: 8, margin: "4px 0 2px", color: "var(--text2)", fontSize: 12 }}>
+            <label className="consent-row">
               <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} style={{ width: 14, height: 14 }} />
-              I understand this is analytics only and not financial advice.
+              I understand this is analytics only, not financial advice.
             </label>
             {(error || authError) && <p className="auth-error">{error || authError}</p>}
             <button className="btn btn-primary btn-full" type="submit" disabled={loading}>
-              {loading ? "Please wait..." : (mode === "signup" ? "Create Account" : "Sign In")}
+              {loading ? "Please wait..." : mode === "signup" ? "Create Account" : "Sign In"}
             </button>
             <p className="auth-note">
               {mode === "signup"
-                ? "Create your account once, then sign in from any device."
-                : "Sign in with your username and password."}
+                ? "Create once, sign in from any device."
+                : "Use your username or email to access the platform."}
             </p>
           </form>
         </section>

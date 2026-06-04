@@ -16,6 +16,10 @@ services:
       - key: CORS_ORIGINS
         value: "*"
         scope: runtime
+      - key: SUPABASE_URL
+        scope: runtime
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        scope: runtime
       - key: PYTHON_VERSION
         value: "3.11"
         scope: runtime
