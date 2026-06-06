@@ -804,15 +804,22 @@ function LoginGate({ onAuthenticated, authError }) {
     setError("");
     try {
       if (mode === "signup") {
+<<<<<<< HEAD
         const reg = await apiPost("/api/auth/register", {
+=======
+        await apiPost("/api/auth/register", {
+>>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
           username: cleanUsername,
           email: cleanEmail,
           password: cleanPassword,
         }, { skipAuth: true });
+<<<<<<< HEAD
         if (reg.token && reg.user) {
           onAuthenticated(reg);
           return;
         }
+=======
+>>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
       }
       const data = await apiPost("/api/auth/login", {
         username: cleanUsername,
@@ -1582,7 +1589,11 @@ function Optimisation() {
   const [rf, setRf] = useState(() => +(store.riskFreeRate * 100).toFixed(4));
   const [maxW, setMaxW] = useState(40);
   const [weights, setWeights] = useState(() => weightsFromEntries(store.portfolioEntries, store.tickers));
+<<<<<<< HEAD
   const [methods, setMethods] = useState(["mean_variance", "min_variance", "cvar", "risk_parity", "hrp", "max_diversification", "multi_objective"]);
+=======
+  const [methods, setMethods] = useState(["mean_variance", "min_variance", "cvar", "risk_parity", "max_diversification", "multi_objective"]);
+>>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [tab, setTab] = useState("comparison");
@@ -1600,8 +1611,12 @@ function Optimisation() {
   const METHOD_OPTIONS = [
     { key: "mean_variance", label: "Mean Variance" }, { key: "min_variance", label: "Min Variance" },
     { key: "cvar", label: "Tail-Risk Control" }, { key: "risk_parity", label: "Balanced Risk" },
+<<<<<<< HEAD
     { key: "hrp", label: "HRP (Hierarchical Risk Parity)" },
     { key: "max_diversification", label: "Max Diversification (HRP)" }, { key: "multi_objective", label: "Multi-Objective" },
+=======
+    { key: "max_diversification", label: "Max Diversification" }, { key: "multi_objective", label: "Multi-Objective" },
+>>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
   ];
 
   async function run() {

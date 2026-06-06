@@ -73,9 +73,14 @@ def get_portfolio_construction(
     """
 
     # ── Imports from existing M3 modules ─────────────────────────────────────
+<<<<<<< HEAD
     from portfolio.portfolio_complete import load_price_data, normalize_tickers_for_market_data
     from portfolio.price_preprocessing import prepare_price_panel
     from portfolio.portfolio_complete import (
+=======
+    from portfolio.portfolio_complete  import load_price_data, normalize_tickers_for_market_data
+    from portfolio.portfolio_complete    import (
+>>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
         PortfolioOptimizer,
         compute_daily_returns,
         compute_expected_returns,
@@ -109,6 +114,7 @@ def get_portfolio_construction(
             result["error"] = "Could not load price data. Check tickers and connection."
             return result
 
+<<<<<<< HEAD
         try:
             prices, price_diag = prepare_price_panel(prices, tickers)
         except ValueError as exc:
@@ -119,6 +125,22 @@ def get_portfolio_construction(
         valid_tickers = list(prices.columns)
         result["tickers"] = valid_tickers
         result["price_diagnostics"] = price_diag
+=======
+        # Drop tickers with too many NaN values
+        valid_tickers = [
+            t for t in tickers
+            if t in prices.columns and prices[t].isna().mean() < 0.30
+        ]
+        if len(valid_tickers) < 2:
+            result["error"] = (
+                f"Only {len(valid_tickers)} valid ticker(s) found. "
+                "Need at least 2."
+            )
+            return result
+
+        result["tickers"] = valid_tickers
+        prices       = prices[valid_tickers].dropna()
+>>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
         daily_returns = compute_daily_returns(prices)
         expected_returns = compute_expected_returns(daily_returns, annualized=True)
         covariance_matrix = compute_covariance_matrix(daily_returns, annualized=True)

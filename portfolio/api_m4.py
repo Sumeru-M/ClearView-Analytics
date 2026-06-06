@@ -98,8 +98,12 @@ def get_scenario_analysis(
     """
 
     # ── Imports from existing M4 modules ─────────────────────────────────────
+<<<<<<< HEAD
     from portfolio.portfolio_complete import load_price_data, normalize_tickers_for_market_data
     from portfolio.price_preprocessing import prepare_price_panel
+=======
+    from portfolio.portfolio_complete   import load_price_data, normalize_tickers_for_market_data
+>>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
     from portfolio.portfolio_complete     import (
         PortfolioOptimizer, compute_daily_returns,
         compute_expected_returns, compute_covariance_matrix,
@@ -110,6 +114,15 @@ def get_scenario_analysis(
         compute_cvar, compute_component_var,
     )
 
+<<<<<<< HEAD
+=======
+    # Load scenario functions from run_m4.py
+    get_enhanced_scenarios, analyze_impact = _load_m4_scenarios()
+    if not get_enhanced_scenarios or not analyze_impact:
+        result["error"] = "Scenario functions could not be loaded from examples.run_m4"
+        return result
+
+>>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
     result = {
         "tickers":           tickers,
         "portfolio_value":   portfolio_value,
@@ -121,11 +134,14 @@ def get_scenario_analysis(
         "error":             None,
     }
 
+<<<<<<< HEAD
     get_enhanced_scenarios, analyze_impact = _load_m4_scenarios()
     if not get_enhanced_scenarios or not analyze_impact:
         result["error"] = "Scenario functions could not be loaded from examples.run_m4"
         return result
 
+=======
+>>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
     try:
         tickers = normalize_tickers_for_market_data(tickers)
 
@@ -135,12 +151,17 @@ def get_scenario_analysis(
             result["error"] = "Could not load price data."
             return result
 
+<<<<<<< HEAD
         try:
             prices, _ = prepare_price_panel(prices, tickers)
         except ValueError as exc:
             result["error"] = str(exc)
             return result
         valid = list(prices.columns)
+=======
+        valid = [t for t in tickers if t in prices.columns]
+        prices  = prices[valid].dropna()
+>>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
         returns = compute_daily_returns(prices)
         mu      = compute_expected_returns(returns)
         sigma   = compute_covariance_matrix(returns)

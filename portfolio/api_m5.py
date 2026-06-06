@@ -22,12 +22,18 @@ Usage:
 import sys
 import os
 import json
+<<<<<<< HEAD
 import logging
 import numpy as np
 import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+=======
+import numpy as np
+import pandas as pd
+
+>>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
 # Add project root to path for imports
 try:
     _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -63,7 +69,11 @@ def get_institutional_optimisation(
     confidence_level : CVaR confidence level
     methods          : "all" or comma-separated from:
                        mean_variance, min_variance, cvar,
+<<<<<<< HEAD
                        risk_parity, hrp, max_diversification, multi_objective
+=======
+                       risk_parity, max_diversification, multi_objective
+>>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
 
     Returns
     -------
@@ -108,14 +118,20 @@ def get_institutional_optimisation(
 
     # ── Imports from existing M5 modules ─────────────────────────────────────
     from portfolio.portfolio_complete import load_price_data, compute_daily_returns, normalize_tickers_for_market_data
+<<<<<<< HEAD
     from portfolio.price_preprocessing import prepare_price_panel
+=======
+>>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
     from portfolio.internal.constraints import build_institutional_constraints
     from portfolio.internal.optimization_engine import (
         optimize_mean_variance,
         optimize_minimum_variance,
         optimize_cvar,
         optimize_risk_parity,
+<<<<<<< HEAD
         optimize_hrp,
+=======
+>>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
         optimize_max_diversification,
         optimize_multi_objective,
         compute_efficient_frontier,
@@ -159,6 +175,7 @@ def get_institutional_optimisation(
             result["error"] = "Could not load price data."
             return result
 
+<<<<<<< HEAD
         try:
             prices, price_diag = prepare_price_panel(prices, tickers)
         except ValueError as exc:
@@ -170,6 +187,13 @@ def get_institutional_optimisation(
         N = len(valid)
 
         log_ret = compute_daily_returns(prices)
+=======
+        valid = [t for t in tickers if t in prices.columns]
+        prices = prices[valid].dropna()
+        N      = len(valid)
+
+        log_ret        = compute_daily_returns(prices)
+>>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
         mu_log_daily   = log_ret.mean()
         var_log_daily  = log_ret.var()
         mu_series      = np.exp(mu_log_daily * 252 + 0.5 * var_log_daily * 252) - 1
@@ -200,9 +224,13 @@ def get_institutional_optimisation(
 
         # ── Constraints ───────────────────────────────────────────────────────
         min_feasible = 1.0 / N
+<<<<<<< HEAD
         min_weight = max(0.01, min_feasible * 0.5)
         eff_max_w = max(max_weight, min_feasible + 0.01)
         hrp_bounds = (min_weight, eff_max_w)
+=======
+        eff_max_w    = max(max_weight, min_feasible + 0.01)
+>>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
         sector_map   = {t: get_sector(t) for t in valid}
         
         # Calculate minimum required sector cap to prevent solver failure
@@ -238,6 +266,7 @@ def get_institutional_optimisation(
             "risk_parity":         lambda: optimize_risk_parity(
                 Sigma=Sigma_shrink, tickers=valid, mu=mu_series.values,
                 returns_history=simple_returns, rf=rf),
+<<<<<<< HEAD
             "hrp":                 lambda: optimize_hrp(
                 Sigma=Sigma_shrink, tickers=valid, mu=mu_series.values,
                 constraint_builder=cb, returns_history=simple_returns,
@@ -246,6 +275,11 @@ def get_institutional_optimisation(
                 Sigma=Sigma_shrink, tickers=valid, mu=mu_series.values,
                 constraint_builder=cb, returns_history=simple_returns,
                 weight_bounds=hrp_bounds, rf=rf),
+=======
+            "max_diversification": lambda: optimize_max_diversification(
+                Sigma=Sigma_shrink, tickers=valid, mu=mu_series.values,
+                constraint_builder=cb, returns_history=simple_returns, rf=rf),
+>>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
             "multi_objective":     lambda: optimize_multi_objective(
                 mu=mu_series.values, Sigma=Sigma_shrink, tickers=valid,
                 constraint_builder=cb, returns_history=simple_returns,
@@ -270,8 +304,12 @@ def get_institutional_optimisation(
                     portfolio_value=portfolio_value, rf=rf,
                 )
                 opt_results[mname] = res
+<<<<<<< HEAD
             except Exception as exc:
                 logger.warning("M5 method %s failed: %s", mname, exc, exc_info=True)
+=======
+            except Exception:
+>>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
                 continue
 
         if not opt_results:
