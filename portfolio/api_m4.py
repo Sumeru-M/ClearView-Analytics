@@ -98,31 +98,25 @@ def get_scenario_analysis(
     """
 
     # ── Imports from existing M4 modules ─────────────────────────────────────
-<<<<<<< HEAD
-    from portfolio.portfolio_complete import load_price_data, normalize_tickers_for_market_data
-    from portfolio.price_preprocessing import prepare_price_panel
-=======
-    from portfolio.portfolio_complete   import load_price_data, normalize_tickers_for_market_data
->>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
-    from portfolio.portfolio_complete     import (
-        PortfolioOptimizer, compute_daily_returns,
-        compute_expected_returns, compute_covariance_matrix,
+    from portfolio.portfolio_complete import (
+        load_price_data,
+        normalize_tickers_for_market_data,
+        PortfolioOptimizer,
+        compute_daily_returns,
+        compute_expected_returns,
+        compute_covariance_matrix,
+        ScenarioEngine,
+        compute_parametric_var,
+        compute_historical_var,
+        compute_cvar,
+        compute_component_var,
     )
-    from portfolio.portfolio_complete import ScenarioEngine
-    from portfolio.portfolio_complete    import (
-        compute_parametric_var, compute_historical_var,
-        compute_cvar, compute_component_var,
-    )
+    try:
+        from portfolio.price_preprocessing import prepare_price_panel
+    except Exception:
+        prepare_price_panel = None
 
-<<<<<<< HEAD
-=======
-    # Load scenario functions from run_m4.py
-    get_enhanced_scenarios, analyze_impact = _load_m4_scenarios()
-    if not get_enhanced_scenarios or not analyze_impact:
-        result["error"] = "Scenario functions could not be loaded from examples.run_m4"
-        return result
-
->>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
+    
     result = {
         "tickers":           tickers,
         "portfolio_value":   portfolio_value,
@@ -134,14 +128,7 @@ def get_scenario_analysis(
         "error":             None,
     }
 
-<<<<<<< HEAD
-    get_enhanced_scenarios, analyze_impact = _load_m4_scenarios()
-    if not get_enhanced_scenarios or not analyze_impact:
-        result["error"] = "Scenario functions could not be loaded from examples.run_m4"
-        return result
-
-=======
->>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
+    
     try:
         tickers = normalize_tickers_for_market_data(tickers)
 
@@ -151,17 +138,16 @@ def get_scenario_analysis(
             result["error"] = "Could not load price data."
             return result
 
-<<<<<<< HEAD
-        try:
-            prices, _ = prepare_price_panel(prices, tickers)
-        except ValueError as exc:
-            result["error"] = str(exc)
-            return result
-        valid = list(prices.columns)
-=======
-        valid = [t for t in tickers if t in prices.columns]
-        prices  = prices[valid].dropna()
->>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
+        if prepare_price_panel is not None:
+            try:
+                prices, _ = prepare_price_panel(prices, tickers)
+                valid = list(prices.columns)
+            except ValueError as exc:
+                result["error"] = str(exc)
+                return result
+        else:
+            valid = [t for t in tickers if t in prices.columns]
+            prices  = prices[valid].dropna()
         returns = compute_daily_returns(prices)
         mu      = compute_expected_returns(returns)
         sigma   = compute_covariance_matrix(returns)

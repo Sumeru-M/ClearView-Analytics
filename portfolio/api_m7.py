@@ -169,13 +169,11 @@ def get_market_regime(
     try:
         m7 = _load_m7()
 
-        from portfolio.portfolio_complete import load_price_data, normalize_tickers_for_market_data
-<<<<<<< HEAD
-        from portfolio.portfolio_complete import compute_daily_returns
-        from portfolio.price_preprocessing import prepare_price_panel
-=======
-        from portfolio.portfolio_complete   import compute_daily_returns
->>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
+        from portfolio.portfolio_complete import load_price_data, normalize_tickers_for_market_data, compute_daily_returns
+        try:
+            from portfolio.price_preprocessing import prepare_price_panel
+        except Exception:
+            prepare_price_panel = None
 
         tickers = normalize_tickers_for_market_data(tickers)
 
@@ -199,27 +197,23 @@ def get_market_regime(
             result["error"] = "Could not load price data."
             return result
 
-<<<<<<< HEAD
-        try:
-            prices, _ = prepare_price_panel(
-                prices, tickers, min_overlap_rows=100, min_tickers=1
-            )
-        except ValueError as exc:
-            result["error"] = str(exc)
-            return result
-
-        valid = list(prices.columns)
-        daily_ret = compute_daily_returns(prices, min_rows=100)
-=======
-        valid     = [t for t in tickers if t in prices.columns]
-        prices    = prices[valid].dropna()
-        daily_ret = compute_daily_returns(prices)
-
-        if len(daily_ret) < 100:
-            result["error"] = "Insufficient historical data (need at least 100 days)."
-            return result
-
->>>>>>> b548e758dd25bd1ab3a382d699abc6221ea22260
+        if prepare_price_panel is not None:
+            try:
+                prices, _ = prepare_price_panel(
+                    prices, tickers, min_overlap_rows=100, min_tickers=1
+                )
+            except ValueError as exc:
+                result["error"] = str(exc)
+                return result
+            valid = list(prices.columns)
+            daily_ret = compute_daily_returns(prices)
+        else:
+            valid     = [t for t in tickers if t in prices.columns]
+            prices    = prices[valid].dropna()
+            daily_ret = compute_daily_returns(prices)
+            if len(daily_ret) < 100:
+                result["error"] = "Insufficient historical data (need at least 100 days)."
+                return result
         result["tickers"] = valid
 
         # ── Run M7 pipeline ───────────────────────────────────────────────────
