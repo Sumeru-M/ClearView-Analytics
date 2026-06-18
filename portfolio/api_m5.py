@@ -15,11 +15,7 @@ Usage:
         max_weight       = 0.40,
         sector_cap       = 0.60,
         confidence_level = 0.95,
-<<<<<<< HEAD
         methods          = "all",   # or specific: "hrp,black_litterman"
-=======
-        methods          = "all",   # or specific: "max_sharpe,risk_parity"
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
     )
 """
 
@@ -65,12 +61,7 @@ def get_institutional_optimisation(
     sector_cap       : maximum weight per sector
     confidence_level : CVaR confidence level
     methods          : "all" or comma-separated from:
-<<<<<<< HEAD
                        hrp, black_litterman
-=======
-                       mean_variance, min_variance, cvar, risk_parity,
-                       hrp, max_diversification, multi_objective
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
 
     Returns
     -------
@@ -121,18 +112,8 @@ def get_institutional_optimisation(
         prepare_price_panel = None
     from portfolio.internal.constraints import build_institutional_constraints
     from portfolio.internal.optimization_engine import (
-<<<<<<< HEAD
         optimize_hrp,
         optimize_black_litterman,
-=======
-        optimize_mean_variance,
-        optimize_minimum_variance,
-        optimize_cvar,
-        optimize_risk_parity,
-        optimize_hrp,
-        optimize_max_diversification,
-        optimize_multi_objective,
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
         compute_efficient_frontier,
     )
     from portfolio.internal.robust_optimizer import (
@@ -240,7 +221,6 @@ def get_institutional_optimisation(
         rf = risk_free_rate
 
         # ── Choose which methods to run ───────────────────────────────────────
-<<<<<<< HEAD
         # Allocation Strategy exposes exactly two industry-standard methods:
         #   1. Hierarchical Risk Parity (HRP)  — López de Prado (2016)
         #   2. Black-Litterman Model           — Black & Litterman (1992)
@@ -253,49 +233,14 @@ def get_institutional_optimisation(
                 mu=mu_series.values, Sigma=Sigma_shrink, tickers=valid,
                 constraint_builder=cb, market_weights=w_arr,
                 returns_history=simple_returns, rf=rf),
-=======
-        method_list = {
-            "mean_variance":       lambda: optimize_mean_variance(
-                mu=mu_series.values, Sigma=Sigma_shrink, tickers=valid,
-                constraint_builder=cb, lam=1.0,
-                returns_history=simple_returns, rf=rf),
-            "min_variance":        lambda: optimize_minimum_variance(
-                mu=mu_series.values, Sigma=Sigma_shrink, tickers=valid,
-                constraint_builder=cb,
-                returns_history=simple_returns, rf=rf),
-            "cvar":                lambda: optimize_cvar(
-                mu=mu_series.values, Sigma=Sigma_shrink, tickers=valid,
-                constraint_builder=cb, returns_history=simple_returns,
-                confidence_level=confidence_level, lam_return=0.3, rf=rf),
-            "risk_parity":         lambda: optimize_risk_parity(
-                Sigma=Sigma_shrink, tickers=valid, mu=mu_series.values,
-                returns_history=simple_returns, rf=rf),
-            "hrp":                 lambda: optimize_hrp(
-                Sigma=Sigma_shrink, tickers=valid, mu=mu_series.values,
-                constraint_builder=cb, returns_history=simple_returns,
-                weight_bounds=hrp_bounds, rf=rf),
-            "max_diversification": lambda: optimize_hrp(
-                Sigma=Sigma_shrink, tickers=valid, mu=mu_series.values,
-                constraint_builder=cb, returns_history=simple_returns,
-                weight_bounds=hrp_bounds, rf=rf),
-            "multi_objective":     lambda: optimize_multi_objective(
-                mu=mu_series.values, Sigma=Sigma_shrink, tickers=valid,
-                constraint_builder=cb, returns_history=simple_returns,
-                lam_return=1.0, lam_vol=1.0, lam_cvar=0.5,
-                lam_drawdown=0.3, lam_factor_conc=0.0,
-                confidence_level=confidence_level, rf=rf),
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
         }
 
         if methods.strip().lower() == "all":
             run_methods = list(method_list.keys())
         else:
             run_methods = [m.strip() for m in methods.split(",") if m.strip() in method_list]
-<<<<<<< HEAD
             if not run_methods:
                 run_methods = list(method_list.keys())
-=======
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
 
         # ── Run optimisations ─────────────────────────────────────────────────
         opt_results = {}

@@ -2,37 +2,18 @@
 
 [![Vercel Deployment](https://img.shields.io/badge/Deployment-Live-success?style=flat-square&logo=vercel)](https://clearview-analytics-prod.vercel.app)
 [![Tech Stack](https://img.shields.io/badge/Stack-FastAPI%20%7C%20Vanilla%20JS%20%7C%20Python-blue?style=flat-square)](https://fastapi.tiangolo.com/)
-<<<<<<< HEAD
 
 **ClearView Analytics** is a high-fidelity quantitative finance platform designed for institutional-grade portfolio optimization, regime-switching intelligence, and multi-scenario risk management.
-=======
-[![Security](https://img.shields.io/badge/Security-ML--DSA--III%20%2F%20PQC-blueviolet?style=flat-square)](https://csrc.nist.gov/projects/post-quantum-cryptography)
-
-**ClearView Analytics** is a high-fidelity quantitative finance platform designed for institutional-grade portfolio optimization, regime-switching intelligence, and post-quantum secure risk management.
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
 
 ---
 
 ## Key Capabilities
 
-<<<<<<< HEAD
 ### Quantitative Intelligence
 - **Regime-Switching Engine (M7):** Advanced Hidden Markov Models (HMM) coupled with GARCH(1,1) filters to detect market shifts and modulate risk and allocation dynamically.
 - **Institutional Optimizer (M5):** Robust Black-Litterman and Hierarchical Risk Parity (HRP) allocation for sophisticated multi-asset portfolios.
 - **Stress Testing (M4):** Macroeconomic scenario analysis with beta-propagated shocks covering inflation spikes, rate hikes, and crisis scenarios.
 - **Performance & Risk (M3):** Efficient frontier, VaR/CVaR, drawdown, and factor (CAPM) decomposition.
-=======
-### Quantitative Intelligence (M3–M7)
-- **Regime-Switching Engine (M7):** Advanced Hidden Markov Models (HMM) coupled with GARCH(1,1) filters to detect market shifts and modulate risk and allocation dynamically.
-- **Monte Carlo Projection (M6):** High-precision path modeling for 1Y/3Y/5Y horizons, accurately quantifying the **Probability of Loss** and downside risks.
-- **Institutional Optimizer (M5):** Robust Black-Litterman and Markowitz frontiers for sophisticated multi-asset allocation.
-- **Stress Testing (M4):** Macroeconomic scenario analysis covering inflation spikes, rate hikes, and historical crisis replays.
-
-### Post-Quantum Immune Defense
-- **ML-DSA-III (Crystals-Dilithium):** Implementation of NIST-standard post-quantum signatures for transaction integrity.
-- **Bayesian Immune Layer:** An adaptive security pipeline that learns threat patterns using Neutral-point LLR Bayesian posteriors.
-- **Episodic Threat Memory:** Cosine-similarity memory store for tracking and neutralizing adversarial anomalies in real-time.
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
 
 ---
 
@@ -74,18 +55,11 @@ The platform is fully optimized for **Vercel** via `app.py` and `vercel.json`.
 | Variable | Description |
 |----------|-------------|
 | `AUTH_SECRET` | Secure JWT key for the integrated identity system. |
-<<<<<<< HEAD
 | `AUTH_DB_PATH` | Path to the SQLite auth DB. On Render, point this at a persistent disk (e.g. `/var/data/clearview_auth.db`) so accounts survive restarts. Ignored when Supabase is configured. |
-=======
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
 | `SUPABASE_URL` | Supabase project URL for persistent login storage. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key used by the backend auth API. |
 | `SUPABASE_USERS_TABLE` | Optional users table name. Defaults to `users`. |
 | `CORS_ORIGINS` | Permitted domains for cross-origin resource sharing. |
-<<<<<<< HEAD
-=======
-| `MONGODB_URI` | *(Optional)* Connection string for persistent Bayesian memory storage. |
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
 
 Run `docs/supabase_auth.sql` in the Supabase SQL editor before deploying auth.
 
@@ -94,11 +68,7 @@ Run `docs/supabase_auth.sql` in the Supabase SQL editor before deploying auth.
 ## Repository Structure
 - `src/`: Core FastAPI server and business logic.
 - `portfolio/`: High-performance quantitative engines (M3–M7).
-<<<<<<< HEAD
 - `frontend/`: Institutional-grade, terminal-inspired analytics UI (single-file React).
-=======
-- `frontend/`: Interactive Glassmorphism UI components.
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
 - `docs/`: Expanded technical documentation and research notebooks.
 
 ---

@@ -696,7 +696,6 @@ def optimize_max_diversification(
 
 
 # ---------------------------------------------------------------------------
-<<<<<<< HEAD
 # 6. Black-Litterman Model
 # ---------------------------------------------------------------------------
 
@@ -895,9 +894,6 @@ def optimize_black_litterman(
 
 # ---------------------------------------------------------------------------
 # 7. Multi-Objective Optimization
-=======
-# 6. Multi-Objective Optimization
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
 # ---------------------------------------------------------------------------
 
 def optimize_multi_objective(
@@ -1130,10 +1126,7 @@ OPTIMIZERS = {
     "cvar":               optimize_cvar,
     "risk_parity":        optimize_risk_parity,
     "hrp":                optimize_hrp,                   # PRIMARY diversification method
-<<<<<<< HEAD
     "black_litterman":    optimize_black_litterman,      # Bayesian equilibrium + views
-=======
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
     "max_diversification": optimize_max_diversification,  # deprecated alias → hrp
     "multi_objective":    optimize_multi_objective,
 }

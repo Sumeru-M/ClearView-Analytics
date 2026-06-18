@@ -847,7 +847,6 @@ class OptimizationResult:
     optimization_type: str
 
 
-<<<<<<< HEAD
 def compute_daily_returns(prices: pd.DataFrame, min_rows: int = 30, min_assets: int = 2) -> pd.DataFrame:
     """
     Compute daily log returns from price data.
@@ -856,41 +855,23 @@ def compute_daily_returns(prices: pd.DataFrame, min_rows: int = 30, min_assets: 
 
     Expects an already-aligned price panel (see portfolio.price_preprocessing).
 
-=======
-def compute_daily_returns(prices: pd.DataFrame, min_rows: int = 30) -> pd.DataFrame:
-    """
-    Compute daily log returns from price data.
-    
-    Uses log returns: ln(P_t / P_{t-1}) = ln(P_t) - ln(P_{t-1})
-    
-    Expects an already-aligned price panel (see portfolio.price_preprocessing).
-    
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
     Parameters
     ----------
     prices : pd.DataFrame
         DataFrame with close prices. Columns are tickers, index is datetime.
     min_rows : int
         Minimum number of return observations required.
-<<<<<<< HEAD
     min_assets : int, default=2
         Minimum number of columns (assets) required. Portfolio construction
         needs at least 2 assets, but a single benchmark series (e.g. ^NSEI for
         factor/CAPM analysis) is legitimately one column — pass min_assets=1
         in that case.
 
-=======
-    
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
     Returns
     -------
     pd.DataFrame
         DataFrame with daily log returns.
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
     Raises
     ------
     ValueError
@@ -905,15 +886,9 @@ def compute_daily_returns(prices: pd.DataFrame, min_rows: int = 30) -> pd.DataFr
             "Ensure tickers are correct (e.g. RELIANCE.NS) and market data loaded successfully."
         )
 
-<<<<<<< HEAD
     if prices.shape[1] < min_assets:
         raise ValueError(
             f"At least {min_assets} ticker(s) with price history are required; got {prices.shape[1]} column(s)."
-=======
-    if prices.shape[1] < 2:
-        raise ValueError(
-            f"At least 2 tickers with price history are required; got {prices.shape[1]} column(s)."
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
         )
 
     if prices.isna().any().any():
@@ -956,7 +931,6 @@ def compute_expected_returns(daily_returns, annualized=True):
         Expected returns (annualized if annualized=True)
     """
     if annualized:
-<<<<<<< HEAD
         # Annualised ARITHMETIC expected return under a log-normal model.
         #
         # If daily log returns r ~ N(mu_log, var_log) i.i.d., the annual log
@@ -975,13 +949,6 @@ def compute_expected_returns(daily_returns, annualized=True):
         mean_daily_log_return = daily_returns.mean()
         var_daily_log_return = daily_returns.var()
         annualized_return = np.exp(mean_daily_log_return * 252 + 0.5 * var_daily_log_return * 252) - 1
-=======
-        # For LOG returns, use exponential annualization
-        # Formula: exp(mean_log_return * 252) - 1
-        # This is correct because log returns add: ln(1+r_total) = sum(ln(1+r_daily))
-        mean_daily_log_return = daily_returns.mean()
-        annualized_return = np.exp(mean_daily_log_return * 252) - 1
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
         return annualized_return
     else:
         return daily_returns.mean()
@@ -1340,7 +1307,6 @@ class PortfolioOptimizer:
         """
         mu = self.expected_returns.values
         Sigma = self.covariance_matrix.values
-<<<<<<< HEAD
         rf = self.risk_free_rate
         n_assets = self.n_assets
 
@@ -1420,112 +1386,6 @@ class PortfolioOptimizer:
 
         # Rare numerical fallback: use the max-return portfolio from Step 1.
         return _finalize(w_lp.value, suffix=" (fallback)")
-=======
-        
-        # ============ AUTO-ADJUSTMENT FOR SMALL PORTFOLIOS ============
-        # Ensure max_weight constraint is mathematically feasible
-        n_assets = len(self.expected_returns)
-        
-        if max_weight is not None:
-            # Calculate minimum max_weight needed for feasibility
-            # For n assets, minimum is 1/n (equal weight)
-            min_feasible_weight = 1.0 / n_assets
-            
-            # If max_weight is too restrictive, adjust it with a warning
-            if max_weight < min_feasible_weight:
-                original_max_weight = max_weight
-                max_weight = min(0.60, min_feasible_weight + 0.05)  # Cap at 60%, add 5% buffer
-                print(f"\n⚠️  Constraint Auto-Adjustment:")
-                print(f"   Portfolio has only {n_assets} assets.")
-                print(f"   Original max {original_max_weight*100:.0f}% per asset is mathematically infeasible.")
-                print(f"   Auto-adjusted to {max_weight*100:.0f}% per asset.")
-                print(f"   💡 Recommendation: Use 4-5 stocks for better diversification and")
-                print(f"      more flexible constraint enforcement.\n")
-        # ============================================================
-        
-        # We use the approach of maximizing return subject to varying target volatility levels
-        # Then select the portfolio with the highest Sharpe ratio
-        
-        # Get range of possible returns
-        min_return = self.expected_returns.min()
-        max_return = self.expected_returns.max()
-        
-        # Create grid of target returns to search
-        n_points = 100
-        target_returns = np.linspace(min_return, max_return, n_points)
-        
-        best_sharpe = -np.inf
-        best_weights = None
-        
-        w = cp.Variable(self.n_assets)
-        
-        for target_return in target_returns:
-            try:
-                # Constraints
-                constraints = [
-                    cp.sum(w) == 1,               # Weights sum to 1
-                    w >= 0,                        # No short-selling
-                    mu @ w == target_return        # Target return constraint
-                ]
-                
-                # Add maximum weight constraint if specified
-                if max_weight is not None:
-                    constraints.append(w <= max_weight)
-                
-                # Minimize variance for this target return
-                problem = cp.Problem(cp.Minimize(cp.quad_form(w, Sigma)), constraints)
-                problem.solve(solver=cp.OSQP, verbose=False)
-                
-                if problem.status in ["optimal", "optimal_inaccurate"]:
-                    weights = w.value
-                    
-                    if weights is not None:
-                        # Clean up small negative values from numerical precision
-                        weights = np.maximum(weights, 0)
-                        weights = weights / weights.sum()  # Renormalize
-                        
-                        # Calculate portfolio metrics
-                        portfolio_return = np.dot(weights, mu)
-                        portfolio_variance = weights @ Sigma @ weights
-                        
-                        if portfolio_variance > 1e-10:  # Avoid division by zero
-                            portfolio_volatility = np.sqrt(portfolio_variance)
-                            sharpe = (portfolio_return - self.risk_free_rate) / portfolio_volatility
-                            
-                            # Track best Sharpe (can be negative!)
-                            if sharpe > best_sharpe:
-                                best_sharpe = sharpe
-                                best_weights = weights.copy()
-                                
-            except Exception:
-                # Skip this target return if optimization fails
-                continue
-        
-        if best_weights is None:
-            raise RuntimeError(
-                "Maximum Sharpe optimization failed - no feasible solution found. "
-                "This can happen if the constraints are too restrictive or data is invalid."
-            )
-        
-        # Final cleanup and results
-        optimal_weights = pd.Series(best_weights, index=self.expected_returns.index)
-        optimal_weights = optimal_weights / optimal_weights.sum()  # Ensure exact sum to 1
-        
-        # Compute final metrics
-        portfolio_return = np.dot(optimal_weights.values, mu)
-        portfolio_volatility = np.sqrt(optimal_weights.values @ Sigma @ optimal_weights.values)
-        sharpe_ratio = (portfolio_return - self.risk_free_rate) / portfolio_volatility if portfolio_volatility > 0 else 0.0
-        
-        constraint_msg = f" (Max {max_weight*100:.0f}% per asset)" if max_weight else ""
-        
-        return OptimizationResult(
-            weights=optimal_weights,
-            expected_return=portfolio_return,
-            volatility=portfolio_volatility,
-            sharpe_ratio=sharpe_ratio,
-            optimization_type=f"Maximum Sharpe Ratio{constraint_msg}"
-        )
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
     
     def compute_efficient_frontier(
         self,
@@ -1580,7 +1440,6 @@ class PortfolioOptimizer:
             problem = cp.Problem(cp.Minimize(cp.quad_form(w, Sigma)), constraints)
             problem.solve()
             
-<<<<<<< HEAD
             if problem.status in ["optimal", "optimal_inaccurate"] and w.value is not None:
                 weights = np.maximum(w.value, 0)  # clip tiny negative numerical noise
                 total = weights.sum()
@@ -1588,12 +1447,6 @@ class PortfolioOptimizer:
                     continue
                 weights = weights / total  # Normalize
 
-=======
-            if problem.status in ["optimal", "optimal_inaccurate"]:
-                weights = w.value
-                weights = weights / weights.sum()  # Normalize
-                
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
                 portfolio_return = np.dot(weights, mu)
                 portfolio_volatility = np.sqrt(weights @ Sigma @ weights)
                 sharpe_ratio = (portfolio_return - self.risk_free_rate) / portfolio_volatility if portfolio_volatility > 0 else 0.0
@@ -3486,7 +3339,6 @@ class ScenarioEngine:
         eigvals = np.linalg.eigvalsh(matrix)
         return np.all(eigvals > -tol)
         
-<<<<<<< HEAD
     def apply_scenario(
         self,
         shock: MarketShock,
@@ -3498,20 +3350,10 @@ class ScenarioEngine:
         The method ensures the resulting covariance matrix is positive semi-definite
         by using the nearest PSD matrix if needed.
 
-=======
-    def apply_scenario(self, shock: MarketShock) -> Tuple[pd.Series, pd.DataFrame]:
-        """
-        Apply a defined market shock to the base parameters.
-        
-        The method ensures the resulting covariance matrix is positive semi-definite
-        by using the nearest PSD matrix if needed.
-        
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
         Parameters
         ----------
         shock : MarketShock
             Market shock scenario to apply
-<<<<<<< HEAD
         betas : pd.Series, optional
             Per-asset market betas used to propagate a scalar (market-factor)
             return shock: each asset is shocked by ``beta_i * return_shock``,
@@ -3520,18 +3362,11 @@ class ScenarioEngine:
             (or for dict-valued, asset-specific shocks) the shock is applied
             uniformly (equivalent to beta = 1 for every asset).
 
-=======
-        
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
         Returns
         -------
         Tuple[pd.Series, pd.DataFrame]
             (shocked_expected_returns, shocked_covariance_matrix)
-<<<<<<< HEAD
 
-=======
-            
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
         Examples
         --------
         >>> engine = ScenarioEngine(returns, cov)
@@ -3540,27 +3375,18 @@ class ScenarioEngine:
         """
         # 1. Apply Return Shock
         shocked_returns = self.base_expected_returns.copy()
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
         if isinstance(shock.return_shock, dict):
             # Asset-specific shocks
             for ticker, shock_val in shock.return_shock.items():
                 if ticker in shocked_returns.index:
                     shocked_returns[ticker] += shock_val
-<<<<<<< HEAD
         elif betas is not None:
             # Factor (beta) propagation: asset_shock_i = beta_i * market_shock.
             beta_aligned = betas.reindex(shocked_returns.index).fillna(1.0)
             shocked_returns = shocked_returns + beta_aligned * shock.return_shock
         else:
             # Uniform shock to all assets (beta = 1 for every asset)
-=======
-        else:
-            # Uniform shock to all assets
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
             shocked_returns += shock.return_shock
             
         # 2. Apply Volatility and Correlation Shocks

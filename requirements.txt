@@ -10,10 +10,6 @@ cvxpy>=1.5,<2.0
 statsmodels>=0.14,<1.0
 matplotlib>=3.8,<4.0
 seaborn>=0.13,<1.0
-<<<<<<< HEAD
-=======
-pymongo>=4.8,<5.0
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
 python-jose[cryptography]>=3.3,<4.0
 passlib[bcrypt]>=1.7,<2.0
 PyJWT[crypto]>=2.9,<3.0

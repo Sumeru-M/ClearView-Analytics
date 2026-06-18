@@ -262,12 +262,8 @@ def get_portfolio_construction(
             from portfolio.portfolio_complete import detect_market_regime
 
             idx_data   = load_price_data(["^NSEI"], period=period)
-<<<<<<< HEAD
             # The benchmark is a single series, so allow a 1-column panel here.
             idx_ret    = compute_daily_returns(idx_data, min_assets=1)
-=======
-            idx_ret    = compute_daily_returns(idx_data)
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
             common     = daily_returns.index.intersection(idx_ret.index)
             fm         = FactorModel(idx_ret.loc[common])
             decomp     = fm.decompose_portfolio_risk(max_sharpe.weights, daily_returns.loc[common])

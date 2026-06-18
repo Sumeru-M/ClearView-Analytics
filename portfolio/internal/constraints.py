@@ -449,11 +449,8 @@ def build_institutional_constraints(
     if sector_map is not None:
         builder.add(SectorCapConstraint(sector_map, tickers, sector_cap=sector_cap))
 
-<<<<<<< HEAD
     return builder
 
-=======
->>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
 
 def apply_weight_bounds_numpy(
     weights: np.ndarray,
