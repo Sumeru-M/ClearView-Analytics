@@ -83,8 +83,29 @@ curl -s -X POST "$BASE_URL/api/m5/institutional" \
     "methods": "all"
   }' | jq '.' || echo "FAILED"
 
+<<<<<<< HEAD
 # Test 8: M7 Market Regime Intelligence
 echo -e "\n8. Testing /api/m7/regime (M7 - Market Regime Intelligence)"
+=======
+# Test 8: M6 Virtual Trade Simulation
+echo -e "\n8. Testing /api/m6/simulate (M6 - Virtual Trade Simulation)"
+curl -s -X POST "$BASE_URL/api/m6/simulate" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ticker": "RELIANCE.NS",
+    "quantity": 10,
+    "price": 2850,
+    "holdings": {"RELIANCE.NS": 10},
+    "current_prices": {"RELIANCE.NS": 2850},
+    "total_value": 28500,
+    "risk_free_rate": 0.07,
+    "n_mc_paths": 100
+  }' | jq '.' || echo "FAILED"
+
+# Test 9: M7 Market Regime Intelligence
+echo -e "\n9. Testing /api/m7/regime (M7 - Market Regime Intelligence)"
+>>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
 curl -s -X POST "$BASE_URL/api/m7/regime" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \

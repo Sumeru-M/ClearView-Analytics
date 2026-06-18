@@ -21,6 +21,10 @@ from pydantic import BaseModel, Field
 from portfolio.api_m3 import get_portfolio_construction
 from portfolio.api_m4 import get_scenario_analysis
 from portfolio.api_m5 import get_institutional_optimisation
+<<<<<<< HEAD
+=======
+from portfolio.api_m6 import get_security_attack_test, get_virtual_trade_and_security
+>>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
 from portfolio.api_m7 import get_market_regime
 
 
@@ -330,6 +334,35 @@ def _safe_json(result: dict[str, Any], status_code: int = 200) -> JSONResponse:
     return JSONResponse(content=result, status_code=status_code)
 
 
+<<<<<<< HEAD
+=======
+def _normalize_transaction_for_security(transaction: dict[str, Any]) -> dict[str, Any]:
+    tx = dict(transaction or {})
+    if "verification_status" not in tx and "verified" in tx:
+        tx["verification_status"] = bool(tx["verified"])
+    tx.setdefault("verification_status", True)
+    tx.setdefault("signed_at", time.time())
+    tx.setdefault("tx_id", f"TX_{int(time.time() * 1000)}")
+    tx.setdefault("sha3_hash", "0" * 64)
+    tx.setdefault("signature", {"scheme": "ML-DSA-III"})
+    return tx
+
+
+ATTACK_TYPE_MAP = {
+    "adversarial_evasion": "signature_forgery",
+    "sybil_trust_poisoning": "burst",
+    "model_extraction": "weak_hash",
+    "side_channel_timing_leaks": "replay",
+    "side_channel_timing": "replay",
+    "fault_injection": "combined",
+    "triangular_fraud": "burst",
+    "price_oracle_manipulation": "weak_hash",
+    "front_running_sandwich_attack": "replay",
+    "front_running": "replay",
+}
+
+
+>>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
 app = FastAPI(title="ClearView Analytics API", version="1.4.0")
 
 app.add_middleware(
@@ -430,6 +463,25 @@ class M5Request(BaseModel):
     methods: str = "all"
 
 
+<<<<<<< HEAD
+=======
+class M6SimulateRequest(BaseModel):
+    ticker: str
+    quantity: float
+    price: float
+    holdings: dict[str, float]
+    current_prices: dict[str, float]
+    total_value: float
+    risk_free_rate: float = 0.07
+    n_mc_paths: int = 1_000
+
+
+class M6SecurityTestRequest(BaseModel):
+    transaction: dict[str, Any]
+    attack_type: str
+
+
+>>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
 class M7Request(BaseModel):
     tickers: list[str]
     risk_free_rate: float = 0.07
@@ -640,6 +692,46 @@ def m5_institutional(req: M5Request, _username: str = Depends(_auth_user)) -> JS
         return _safe_json({"error": str(exc)})
 
 
+<<<<<<< HEAD
+=======
+@app.post("/api/m6/simulate")
+def m6_simulate(req: M6SimulateRequest, _username: str = Depends(_auth_user)) -> JSONResponse:
+    try:
+        result = get_virtual_trade_and_security(
+            ticker=req.ticker,
+            quantity=req.quantity,
+            price=req.price,
+            holdings=req.holdings,
+            current_prices=req.current_prices,
+            total_value=req.total_value,
+            risk_free_rate=req.risk_free_rate,
+            n_mc_paths=max(1000, int(req.n_mc_paths)),
+        )
+
+        tx = result.get("transaction") or {}
+        if tx:
+            tx.setdefault("verification_status", tx.get("verified", True))
+            tx.setdefault("signed_at", time.time())
+            result["transaction"] = tx
+
+        return _safe_json(result)
+    except Exception as exc:  # pragma: no cover
+        return _safe_json({"error": str(exc)})
+
+
+@app.post("/api/m6/security/test")
+def m6_security_test(req: M6SecurityTestRequest, _username: str = Depends(_auth_user)) -> JSONResponse:
+    try:
+        attack_type = ATTACK_TYPE_MAP.get(req.attack_type, req.attack_type)
+        tx = _normalize_transaction_for_security(req.transaction)
+        result = get_security_attack_test(transaction=tx, attack_type=attack_type)
+        result["requested_attack_type"] = req.attack_type
+        return _safe_json(result)
+    except Exception as exc:  # pragma: no cover
+        return _safe_json({"error": str(exc)})
+
+
+>>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
 @app.post("/api/m7/regime")
 def m7_regime(req: M7Request, _username: str = Depends(_auth_user)) -> JSONResponse:
     try:

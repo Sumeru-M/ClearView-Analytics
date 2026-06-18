@@ -9,6 +9,7 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: "gunicorn --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 src.main:app"
     
+<<<<<<< HEAD
     # Persistent disk so the SQLite auth DB survives deploys/restarts.
     # Without this, Render's filesystem is ephemeral and every restart
     # wipes registered accounts (forcing users to sign up again).
@@ -17,6 +18,8 @@ services:
       mountPath: /var/data
       sizeGB: 1
 
+=======
+>>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
     # Environment variables (set these in Render dashboard)
     envVars:
       - key: AUTH_SECRET
@@ -24,12 +27,15 @@ services:
       - key: CORS_ORIGINS
         value: "*"
         scope: runtime
+<<<<<<< HEAD
       # Store the SQLite auth DB on the persistent disk mounted above.
       - key: AUTH_DB_PATH
         value: "/var/data/clearview_auth.db"
         scope: runtime
       # Optional: set both to use Supabase instead of the on-disk SQLite
       # (required for serverless hosts like Vercel where no disk exists).
+=======
+>>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
       - key: SUPABASE_URL
         scope: runtime
       - key: SUPABASE_SERVICE_ROLE_KEY
@@ -37,9 +43,16 @@ services:
       - key: PYTHON_VERSION
         value: "3.11"
         scope: runtime
+<<<<<<< HEAD
 
     # Auto-deploy on push
     autoDeploy: true
 
+=======
+    
+    # Auto-deploy on push
+    autoDeploy: true
+    
+>>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
     # Health check
     healthCheckPath: /api/health/ready

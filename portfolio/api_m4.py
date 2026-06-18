@@ -18,6 +18,10 @@ Usage:
 
 import sys
 import os
+<<<<<<< HEAD
+=======
+import importlib
+>>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
 import numpy as np
 import pandas as pd
 
@@ -32,6 +36,18 @@ if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
 
+<<<<<<< HEAD
+=======
+def _load_m4_scenarios():
+    """Load scenario functions from examples.run_m4."""
+    try:
+        run_m4 = importlib.import_module("examples.run_m4")
+        return getattr(run_m4, "get_enhanced_scenarios", None), getattr(run_m4, "analyze_impact", None)
+    except (ImportError, AttributeError, ModuleNotFoundError):
+        return None, None
+
+
+>>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
 def get_scenario_analysis(
     tickers: list,
     current_weights: list[float] | None = None,
@@ -101,11 +117,14 @@ def get_scenario_analysis(
         compute_cvar,
         compute_component_var,
     )
+<<<<<<< HEAD
     from portfolio.stress_scenarios import (
         get_enhanced_scenarios,
         analyze_impact,
         compute_market_betas,
     )
+=======
+>>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
     try:
         from portfolio.price_preprocessing import prepare_price_panel
     except Exception:
@@ -175,14 +194,20 @@ def get_scenario_analysis(
             "var_historical_pct": round(float(hvar["var_percent"]), 4),
             "cvar_inr":           round(float(cvar["cvar_amount"]), 2),
             "cvar_pct":           round(float(cvar["cvar_percent"]), 4),
+<<<<<<< HEAD
             # "% Contribution" is a percentage that sums to 100; store as a
             # fraction (0-1) so the frontend's `value * 100` renders correctly.
             "risk_contribution":  {
                 t: round(float(cvar_comp.loc[t, "% Contribution"]) / 100.0, 4)
+=======
+            "risk_contribution":  {
+                t: round(float(cvar_comp.loc[t, "% Contribution"]), 2)
+>>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
                 for t in cvar_comp.index
             },
         }
 
+<<<<<<< HEAD
         # ── Market betas for factor (beta) shock propagation ──────────────────
         # A market-factor shock hits each asset by beta_i * shock, so the
         # portfolio P&L reflects its true market sensitivity. Falls back to
@@ -201,6 +226,13 @@ def get_scenario_analysis(
             betas = None  # graceful fallback to uniform (beta = 1) propagation
 
         # ── Scenario analysis ─────────────────────────────────────────────────
+=======
+        # ── Scenario analysis ─────────────────────────────────────────────────
+        if not get_enhanced_scenarios or not analyze_impact:
+            result["error"] = "Scenario functions could not be loaded from examples/run_m4.py"
+            return result
+        
+>>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
         all_scenarios = get_enhanced_scenarios()
         engine        = ScenarioEngine(mu, sigma)
 
@@ -220,7 +252,11 @@ def get_scenario_analysis(
         for code in selected:
             info   = all_scenarios[code]
             shock  = info["shock"]
+<<<<<<< HEAD
             st_mu, st_sigma = engine.apply_scenario(shock, betas=betas)
+=======
+            st_mu, st_sigma = engine.apply_scenario(shock)
+>>>>>>> 6d04c76701645b4f3d69ff437fccad2bb7845e42
             impact = analyze_impact(
                 weights, mu, sigma, st_mu, st_sigma,
                 risk_free_rate, portfolio_value
