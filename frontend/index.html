@@ -1,0 +1,2472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ClearView Analytics | Portfolio Analytics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* Neutral Base - Institutional Graphite */
+  --bg:#080b10;
+  --bg2:#0d1219;
+  --bg3:#131a23;
+  --bg4:#1b2531;
+  
+  /* Borders */
+  --border:#1d2630;
+  --border2:#2b3845;
+  --border3:#11171f;
+  
+  /* Text Hierarchy */
+  --text:#f5f8fb;
+  --text2:#aeb8c5;
+  --text3:#717d8d;
+  --text4:#4b5462;
+  --text-inv:#070a0e;
+  
+  /* Semantic Colors */
+  --success:#15c285;
+  --danger:#f15b54;
+  --warning:#f2a93b;
+  --info:#4ea1ff;
+
+  /* Data Direction */
+  --up:#15c285;
+  --down:#f15b54;
+  --neutral:#717d8d;
+
+  /* Primary Accent */
+  --accent:#4f9bff;
+  --accent-light:#7fb6ff;
+  --accent-dark:#2f6fd6;
+
+  /* Regime Indicators */
+  --bull:#15c285;
+  --bear:#f2a93b;
+  --crisis:#f15b54;
+  --trans:#717d8d;
+
+  /* Aliases for common usage */
+  --amber: #f2a93b;
+  --green: #15c285;
+  --red: #f15b54;
+  --cyan: #4ea1ff;
+  --accent2: #9b8cff;
+  
+  /* Data visualization colors */
+  --corr-diag: rgba(79,155,255,.16);
+  --corr-neg: rgba(241,91,84,.32);
+  --corr-neg-medium: rgba(241,91,84,.05);
+  --corr-neg-half: rgba(79,155,255,.12);
+  --success-bg-light: rgba(21,194,133,.06);
+  --danger-bg-light: rgba(241,91,84,.06);
+  --accent-bg-light: rgba(79,155,255,.12);
+
+  /* Surface treatments */
+  --grid-line: rgba(255,255,255,.04);
+  --hairline: rgba(255,255,255,.06);
+  --accent-soft: rgba(79,155,255,.12);
+  --sheen: linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,0) 40%);
+  --shadow-xs:0 1px 1px 0 rgba(0,0,0,.25);
+  
+  /* Spacing (8px base) */
+  --space-1:4px;
+  --space-2:8px;
+  --space-3:12px;
+  --space-4:16px;
+  --space-5:20px;
+  --space-6:24px;
+  --space-7:32px;
+  
+  /* Border Radius */
+  --radius-sm:4px;
+  --radius-md:6px;
+  --radius-lg:10px;
+  --radius-full:9999px;
+  
+  /* Shadows */
+  --shadow-sm:0 1px 2px 0 rgba(0,0,0,.3);
+  --shadow-md:0 4px 12px -2px rgba(0,0,0,.4), 0 2px 4px -2px rgba(0,0,0,.3);
+  --shadow-lg:0 16px 40px -10px rgba(0,0,0,.6), 0 4px 10px -4px rgba(0,0,0,.45);
+  --shadow-focus:0 0 0 3px rgba(79,155,255,.25);
+  
+  /* Effects */
+  --transition:150ms ease-out;
+  --backdrop-sm:blur(4px);
+  --backdrop-md:blur(8px);
+  --transition-med:220ms cubic-bezier(.4,0,.2,1);
+
+  /* Typography */
+  --font-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --font-mono:'JetBrains Mono','IBM Plex Mono',ui-monospace,SFMono-Regular,monospace;
+  
+  font-size:16px;
+}
+html,body,#root{height:100%;background:var(--bg);color:var(--text)}
+body{
+  font-family:var(--font-sans);
+  font-size:14px;
+  line-height:1.6;
+  overflow-x:hidden;
+  background:var(--bg);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  text-rendering:optimizeLegibility;
+  font-feature-settings:'cv01','ss01','tnum';
+}
+h1,h2,h3,h4,h5{font-family:var(--font-sans);font-weight:600;letter-spacing:-0.02em}
+.mono{font-family:var(--font-mono);font-feature-settings:'tnum'}
+
+/* Layout */
+.shell{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:236px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:var(--space-5) 0 var(--space-3);transition:width var(--transition-med)}
+.sidebar-logo{padding:0 var(--space-5) var(--space-5);display:flex;align-items:center;gap:var(--space-3)}
+.logo-mark{width:32px;height:32px;background:linear-gradient(150deg,var(--accent),var(--accent-dark));border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:12px;font-weight:600;letter-spacing:.02em;color:#fff;box-shadow:var(--shadow-sm),inset 0 1px 0 rgba(255,255,255,.18)}
+.logo-text{font-family:var(--font-sans);font-size:15px;font-weight:600;letter-spacing:-.01em;color:var(--text)}
+.nav-item{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-4);margin:1px var(--space-3);border-radius:var(--radius-sm);cursor:pointer;transition:background var(--transition),color var(--transition);position:relative;color:var(--text3);font-size:13px;font-weight:500}
+.nav-item::before{content:'';position:absolute;left:calc(-1 * var(--space-3));top:50%;transform:translateY(-50%) scaleY(0);width:3px;height:18px;border-radius:0 3px 3px 0;background:var(--accent);transition:transform var(--transition-med)}
+.nav-item:hover{background:var(--bg3);color:var(--text2)}
+.nav-item.active{background:var(--bg3);color:var(--text)}
+.nav-item.active::before{transform:translateY(-50%) scaleY(1)}
+.nav-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-left:auto}
+.nav-dot.idle{background:var(--border2)}
+.nav-dot.loading{background:var(--warning);animation:pulse 1s infinite}
+.nav-dot.success{background:var(--success);box-shadow:0 0 8px -1px var(--success)}
+.nav-dot.error{background:var(--danger)}
+.nav-icon{font-size:15px;width:18px;text-align:center;opacity:.85}
+.nav-section{padding:var(--space-2) var(--space-5) var(--space-1);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text4);margin-top:var(--space-3)}
+
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column;position:relative}
+.topbar{height:56px;flex-shrink:0;background:rgba(13,18,25,.85);backdrop-filter:saturate(140%) blur(10px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 var(--space-6);gap:var(--space-4);position:sticky;top:0;z-index:10}
+.topbar-title{font-family:var(--font-sans);font-size:14px;font-weight:600;color:var(--text);letter-spacing:-.01em;white-space:nowrap}
+.topbar-tickers{display:flex;gap:var(--space-2);flex-wrap:nowrap;overflow:hidden;flex:1;justify-content:center;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.ticker-pill{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px var(--space-2);font-family:var(--font-mono);font-size:11px;color:var(--text2);white-space:nowrap}
+.backend-badge{display:flex;align-items:center;gap:var(--space-2);font-size:11px;color:var(--text3)}
+.backend-dot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 8px -1px var(--success)}
+.backend-dot.offline{background:var(--danger);box-shadow:none}
+.offline-banner{background:var(--danger);color:#fff;padding:var(--space-2) var(--space-6);font-size:13px;text-align:center;display:flex;align-items:center;justify-content:center;gap:var(--space-3)}
+
+.page{flex:1;padding:var(--space-7) var(--space-7);max-width:1280px;width:100%;margin:0 auto;animation:pageIn .32s cubic-bezier(.4,0,.2,1) both}
+@media(max-width:768px){.sidebar{display:none}.page{padding:var(--space-4)}}
+
+/* Cards */
+.card{position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--space-6);box-shadow:var(--shadow-sm),inset 0 1px 0 rgba(255,255,255,.025);transition:border-color var(--transition-med),box-shadow var(--transition-med),transform var(--transition-med);outline:none}
+.card:hover{border-color:var(--border2);box-shadow:var(--shadow-md),inset 0 1px 0 rgba(255,255,255,.03)}
+.card:focus-visible{box-shadow:var(--shadow-focus)}
+.card-sm{position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--space-4);box-shadow:var(--shadow-xs);transition:border-color var(--transition-med),box-shadow var(--transition-med),transform var(--transition-med)}
+.card-accent{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:var(--space-6)}
+
+/* Grid */
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-4)}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4)}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3)}
+@media(max-width:900px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+
+/* Metric cards */
+.metric{position:relative;background:var(--bg2);border-radius:var(--radius-md);padding:var(--space-4) var(--space-5);border:1px solid var(--border);transition:border-color var(--transition-med)}
+.metric:hover{border-color:var(--border2)}
+.metric-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:var(--space-2);font-weight:600}
+.metric-value{font-family:var(--font-mono);font-size:22px;font-weight:500;color:var(--text);line-height:1.1;letter-spacing:-.01em;font-feature-settings:'tnum'}
+.metric-sub{font-size:12px;color:var(--text3);margin-top:var(--space-2)}
+.metric-value.pos{color:var(--success)}
+.metric-value.neg{color:var(--danger)}
+
+/* Inputs */
+input,select,textarea{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:var(--space-2) var(--space-3);color:var(--text);font-family:var(--font-sans);font-size:13px;outline:none;transition:border-color var(--transition),box-shadow var(--transition),background var(--transition);width:100%}
+input:hover,select:hover,textarea:hover{border-color:var(--border2)}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:var(--shadow-focus);background:var(--bg2)}
+input::placeholder{color:var(--text4)}
+input[type=number]{font-family:var(--font-mono);font-feature-settings:'tnum'}
+input[type=range]{accent-color:var(--accent);padding:0;height:auto}
+label{font-size:11px;color:var(--text3);margin-bottom:var(--space-2);display:block;font-weight:500;letter-spacing:.01em}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);padding:var(--space-2) var(--space-4);border-radius:var(--radius-sm);font-family:var(--font-sans);font-size:13px;font-weight:600;letter-spacing:.005em;cursor:pointer;border:1px solid transparent;transition:background var(--transition),border-color var(--transition),box-shadow var(--transition),transform var(--transition);outline:none;white-space:nowrap}
+.btn-primary{background:linear-gradient(180deg,var(--accent-light),var(--accent));color:#fff;box-shadow:var(--shadow-sm),inset 0 1px 0 rgba(255,255,255,.25)}
+.btn-primary:hover{box-shadow:var(--shadow-md),inset 0 1px 0 rgba(255,255,255,.25);transform:translateY(-1px)}
+.btn-primary:active{background:var(--accent-dark)}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-primary:focus-visible{box-shadow:var(--shadow-focus)}
+.btn-outline{background:var(--bg3);border-color:var(--border);color:var(--text2)}
+.btn-outline:hover{border-color:var(--border2);color:var(--text);background:var(--bg4)}
+.btn-sm{padding:var(--space-1) var(--space-3);font-size:12px;border-radius:var(--radius-sm)}
+.btn-full{width:100%}
+
+/* Tabs */
+.tabs{display:flex;gap:var(--space-5);background:transparent;padding:0;margin-bottom:var(--space-6);flex-wrap:wrap;border-bottom:1px solid var(--border)}
+.tab{padding:var(--space-3) 0;font-size:13px;font-weight:500;cursor:pointer;color:var(--text3);transition:color var(--transition),border-color var(--transition);border:none;background:transparent;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab:hover{color:var(--text2)}
+.tab.active{color:var(--text);border-bottom-color:var(--accent)}
+
+/* Tables */
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{position:sticky;top:0;z-index:1}
+th{text-align:left;padding:var(--space-3);color:var(--text3);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid var(--border2);background:var(--bg2);white-space:nowrap}
+td{padding:var(--space-3);border-bottom:1px solid var(--border3);color:var(--text2);transition:background var(--transition)}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--bg3)}
+.td-right{text-align:right}
+.td-mono{font-family:var(--font-mono);font-feature-settings:'tnum';color:var(--text)}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:var(--space-1);padding:2px var(--space-2);border-radius:var(--radius-sm);font-size:11px;font-weight:600;border:1px solid transparent;letter-spacing:.01em}
+.badge-green{background:rgba(21,194,133,.12);color:var(--success);border-color:rgba(21,194,133,.2)}
+.badge-red{background:rgba(241,91,84,.12);color:var(--danger);border-color:rgba(241,91,84,.2)}
+.badge-amber{background:rgba(242,169,59,.12);color:var(--warning);border-color:rgba(242,169,59,.2)}
+.badge-blue{background:rgba(79,155,255,.12);color:var(--accent);border-color:rgba(79,155,255,.2)}
+.badge-gray{background:var(--bg4);color:var(--text3);border-color:var(--border)}
+.badge-cyan{background:rgba(78,161,255,.1);color:var(--info);border-color:rgba(78,161,255,.18)}
+
+/* Regime badges */
+.regime-badge{display:inline-flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-4);border-radius:var(--radius-sm);font-size:12px;font-weight:600;border:1px solid transparent}
+.regime-bull{background:rgba(21,194,133,.12);color:var(--bull);border-color:rgba(21,194,133,.22)}
+.regime-bear{background:rgba(242,169,59,.12);color:var(--bear);border-color:rgba(242,169,59,.22)}
+.regime-crisis{background:rgba(241,91,84,.12);color:var(--crisis);border-color:rgba(241,91,84,.22)}
+.regime-trans{background:rgba(113,125,141,.14);color:var(--trans);border-color:rgba(113,125,141,.24)}
+
+/* Progress bars */
+.pbar{height:6px;background:var(--bg4);border-radius:var(--radius-full);overflow:hidden}
+.pbar-fill{height:100%;border-radius:var(--radius-full);transition:width .4s}
+
+/* Divider */
+.divider{height:1px;background:var(--border);margin:var(--space-5) 0}
+
+/* Loading */
+.spinner{width:28px;height:28px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+.loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--space-3);padding:var(--space-7);color:var(--text3);font-size:13px;text-align:center}
+.skeleton{position:relative;overflow:hidden;background:var(--bg3);border-radius:var(--radius-sm)}
+.skeleton::after{content:'';position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);animation:shimmer 1.4s infinite}
+.error-wrap{background:rgba(241,91,84,.08);border:1px solid rgba(241,91,84,.22);border-radius:var(--radius-md);padding:var(--space-5);display:flex;align-items:flex-start;gap:var(--space-3)}
+.error-icon{color:var(--danger);font-size:18px;flex-shrink:0;margin-top:2px}
+.error-text{font-size:13px;color:var(--text2)}
+
+/* Form groups */
+.form-row{display:flex;gap:var(--space-3);flex-wrap:wrap}
+.form-field{flex:1;min-width:140px}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--space-3)}
+
+/* Section headers */
+.section-header{margin-bottom:var(--space-6);padding:0 0 var(--space-5);border-bottom:1px solid var(--border)}
+.section-title{font-size:26px;color:var(--text);margin-bottom:var(--space-2);line-height:1.15;font-weight:600;letter-spacing:-0.02em}
+.section-sub{font-size:14px;color:var(--text2);max-width:720px;line-height:1.5}
+.section-line{width:36px;height:2px;background:var(--accent);border-radius:var(--radius-sm);margin-top:var(--space-3)}
+
+/* Stacked items */
+.stack{display:flex;flex-direction:column;gap:var(--space-3)}
+.stack-sm{display:flex;flex-direction:column;gap:var(--space-2)}
+
+/* Highlight row */
+.row-best td{color:var(--text)!important;background:rgba(79,155,255,.07)!important}
+.row-best td:first-child{border-left:2px solid var(--accent)}
+
+/* Corr heatmap */
+.corr-cell{text-align:center;font-family:var(--font-mono);font-size:11px;padding:var(--space-2) var(--space-1)}
+
+/* PQC meter */
+.entropy-bar{height:8px;border-radius:var(--radius-full);overflow:hidden;background:var(--bg4)}
+.entropy-fill{height:100%;border-radius:var(--radius-full)}
+
+/* Signal bar */
+.signal-row{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-1) 0}
+.signal-label{font-size:11px;color:var(--text3);width:130px;flex-shrink:0}
+.signal-bar{flex:1;height:5px;background:var(--bg4);border-radius:var(--radius-full);overflow:hidden}
+.signal-fill{height:100%;border-radius:var(--radius-full)}
+.signal-val{font-family:var(--font-mono);font-size:11px;color:var(--text3);width:38px;text-align:right}
+
+/* Horizon cards */
+.horizon-card{background:var(--bg3);border-radius:var(--radius-md);padding:var(--space-4)}
+.horizon-title{font-size:12px;color:var(--text3);margin-bottom:var(--space-3);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.horizon-row{display:flex;justify-content:space-between;align-items:center;padding:var(--space-1) 0;font-size:12px}
+
+/* Ticker input */
+.ticker-input-wrap{display:flex;flex-wrap:wrap;gap:var(--space-2);background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--space-2) var(--space-3);min-height:40px;align-items:center;transition:border var(--transition)}
+.ticker-input-wrap:focus-within{border-color:var(--accent)}
+.ticker-tag{display:flex;align-items:center;gap:var(--space-1);background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius-sm);padding:var(--space-1) var(--space-2);font-family:var(--font-mono);font-size:11px;color:var(--text2)}
+.ticker-tag button{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;line-height:1;padding:0 var(--space-1);transition:color var(--transition)}
+.ticker-tag button:hover{color:var(--danger)}
+.ticker-inline-input{background:none;border:none;outline:none;font-family:var(--font-mono);font-size:12px;color:var(--text);width:100px;padding:0;min-width:80px}
+
+/* Weight donut placeholder */
+.donut-wrap{display:flex;flex-direction:column;align-items:center;gap:var(--space-3)}
+
+/* Animations */
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shimmer{100%{transform:translateX(100%)}}
+.fade-in{animation:fadeIn .3s cubic-bezier(.4,0,.2,1)}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* Select none on labels */
+.nav-item,.tab,.btn{user-select:none}
+
+/* Toggle buttons */
+.toggle-group{display:inline-flex;gap:2px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:2px}
+.toggle-btn{padding:5px 12px;border-radius:calc(var(--radius-sm) - 1px);font-size:12px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text3);transition:background var(--transition),color var(--transition)}
+.toggle-btn:hover{color:var(--text2)}
+.toggle-btn.active{background:var(--bg4);color:var(--text);box-shadow:var(--shadow-xs)}
+
+/* Regime table */
+.regime-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)}
+.regime-row:last-child{border-bottom:none}
+.regime-name{font-size:12px;color:var(--text2);width:120px;flex-shrink:0}
+.regime-pbar{flex:1}
+.regime-pct{font-family:var(--font-mono);font-size:12px;color:var(--text);width:42px;text-align:right}
+
+/* Transition matrix */
+.tm-cell{font-family:var(--font-mono);font-size:11px;text-align:center;padding:7px 6px}
+.tm-head{font-size:10px;color:var(--text3);text-align:center;padding:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px}
+
+/* Auth + onboarding */
+.auth-shell{min-height:100vh;display:grid;place-items:center;padding:20px;background:var(--bg);position:relative;overflow:hidden}
+.auth-shell::before{content:'';position:absolute;width:720px;height:720px;border-radius:50%;background:radial-gradient(circle,rgba(79,155,255,.07) 0%,transparent 68%);top:42%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+.auth-wrap{width:min(900px,100%);display:grid;grid-template-columns:1.15fr .85fr;gap:16px;position:relative}
+.auth-panel{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:30px;position:relative;box-shadow:var(--shadow-lg),inset 0 1px 0 rgba(255,255,255,.03)}
+.auth-brand{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.auth-logo-icon{width:38px;height:38px;background:linear-gradient(150deg,var(--accent-light),var(--accent-dark));border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:13px;font-weight:600;color:#fff;box-shadow:0 0 24px -4px rgba(79,155,255,.45),inset 0 1px 0 rgba(255,255,255,.25)}
+.auth-logo-text{font-size:15px;font-weight:600;color:var(--text);line-height:1.1;letter-spacing:-.01em}
+.auth-logo-sub{font-size:10px;color:var(--text3);letter-spacing:.12em;margin-top:2px}
+.auth-title{font-size:27px;font-weight:600;line-height:1.15;margin-bottom:10px;color:var(--text);letter-spacing:-.02em}
+.auth-title em{font-family:Georgia,serif;font-style:italic;font-weight:500;color:var(--accent-light)}
+.auth-sub{font-size:13px;color:var(--text3);line-height:1.6;margin-bottom:16px}
+.auth-disclaimer{border-left:2px solid var(--warning);background:rgba(242,169,59,.08);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:var(--text2);line-height:1.55;margin-bottom:16px}
+.auth-features{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.auth-feature{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text3)}
+.auth-feature-icon{width:22px;height:22px;border-radius:var(--radius-sm);background:rgba(79,155,255,.1);border:1px solid rgba(79,155,255,.22);color:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px}
+.auth-form{display:flex;flex-direction:column;gap:12px}
+.auth-error{font-size:12px;color:var(--danger);padding:8px 10px;background:rgba(241,91,84,.08);border:1px solid rgba(241,91,84,.2);border-radius:var(--radius-sm)}
+.auth-note{font-size:12px;color:var(--text4);line-height:1.5}
+.consent-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);margin:4px 0 2px;text-transform:none;letter-spacing:0}
+
+/* CSV import */
+.import-wrap{background:var(--bg3);border:1px dashed var(--border2);border-radius:var(--radius-md);padding:14px}
+.import-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.import-hint{font-size:11px;color:var(--text3);margin-top:6px;line-height:1.5}
+.import-status{margin-top:8px;font-size:12px}
+.import-status.ok{color:var(--success)}
+.import-status.err{color:var(--danger)}
+.input-xs{max-width:360px}
+
+@media(max-width:900px){.auth-wrap{grid-template-columns:1fr}}
+
+/* Accessibility & polish */
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn:focus-visible,.tab:focus-visible,.nav-item:focus-visible,.toggle-btn:focus-visible{outline:none;box-shadow:var(--shadow-focus)}
+::selection{background:rgba(74,144,226,.28);color:var(--text)}
+::-webkit-scrollbar-thumb:hover{background:var(--text4)}
+.btn:active{transform:translateY(.5px)}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<!--
+  App source is transformed at runtime by the bootstrap script at the end of
+  <body>. We do NOT use type="text/babel" auto-processing, because the unpinned
+  @babel/standalone CDN now defaults preset-react to the *automatic* JSX runtime
+  (emitting require("react/jsx-runtime")), which is incompatible with the UMD
+  React global loaded above and leaves the page blank. The bootstrap forces the
+  *classic* runtime (React.createElement), which works with UMD React.
+-->
+<script type="text/jsx-classic" id="cv-app-src">
+const { useState, useEffect, useCallback, useRef, useMemo } = React;
+
+// ─── API ──────────────────────────────────────────────────────────────────────
+const BASE = (
+  window.__VITE_API_BASE_URL ||
+  (window.location.protocol.startsWith("http") ? window.location.origin : "http://localhost:8000")
+);
+
+const MAX_PORTFOLIO_ENTRIES = 15;
+const AUTH_TOKEN_KEY = "clearview-auth-token";
+const AUTH_PROFILE_KEY = "clearview-auth-profile";
+function authHeader(skipAuth = false) {
+  if (skipAuth) return {};
+  const token = window.localStorage.getItem(AUTH_TOKEN_KEY);
+  if (!token) return {};
+  return { Authorization: `Bearer ${token}` };
+}
+
+async function apiPost(path, body, opts = {}) {
+  const headers = authHeader(opts.skipAuth);
+  const res = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...headers },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401) {
+    window.localStorage.removeItem(AUTH_TOKEN_KEY);
+    window.localStorage.removeItem(AUTH_PROFILE_KEY);
+    window.dispatchEvent(new Event("clearview-auth-expired"));
+  }
+  if (!res.ok || data.error || data.detail) throw new Error(data.error || data.detail || `HTTP ${res.status}`);
+  return data;
+}
+
+async function apiGet(path, opts = {}) {
+  const headers = authHeader(opts.skipAuth);
+  const res = await fetch(`${BASE}${path}`, {
+    headers,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401) {
+    window.localStorage.removeItem(AUTH_TOKEN_KEY);
+    window.localStorage.removeItem(AUTH_PROFILE_KEY);
+    window.dispatchEvent(new Event("clearview-auth-expired"));
+  }
+  if (!res.ok || data.error || data.detail) throw new Error(data.error || data.detail || `HTTP ${res.status}`);
+  return data;
+}
+
+const DEFAULT_PORTFOLIO_ENTRIES = [
+  { ticker: "RELIANCE.NS", shares: 10, price: 2850, weight: 0.34 },
+  { ticker: "TCS.NS", shares: 5, price: 3900, weight: 0.33 },
+  { ticker: "INFY.NS", shares: 12, price: 1650, weight: 0.33 },
+];
+
+const COMPANY_TO_TICKER = {
+  BHARATELECTRONICSLTD: "BEL.NS",
+  BIOCONLIMITED: "BIOCON.NS",
+  COFORGELIMITED: "COFORGE.NS",
+  DRREDDYSLABORATORIES: "DRREDDY.NS",
+  HCLTECHNOLOGIESLTD: "HCLTECH.NS",
+  HDFCBANKLTD: "HDFCBANK.NS",
+  JBMAUTOLIMITED: "JBMA.NS",
+  JINDALSTAINLESSLIMITED: "JSL.NS",
+  KFINTECHNOLOGIESLIMITED: "KFINTECH.NS",
+  MOTILALOSNASDAQ100ETF: "MON100.NS",
+  NIPINDETFNIFTYBEES: "NIFTYBEES.NS",
+  SAKSOFTLIMITED: "SAKSOFT.NS",
+  STATEBANKOFINDIA: "SBIN.NS",
+  TATAMOTORSLIMITED: "TATAMOTORS.NS",
+};
+
+function normalizeTicker(raw) {
+  const t = (raw || "").trim().toUpperCase().replace(/\.$/, "");
+  if (!t) return "";
+  if (t.startsWith("^")) return t;
+
+  // Already symbol-like values (e.g. SBIN, SBIN.NS, MON100.NS)
+  if (/^[A-Z0-9_-]+(?:\.[A-Z]{1,4})?$/.test(t)) {
+    return t.includes(".") ? t : `${t}.NS`;
+  }
+
+  // Company-name fallback (e.g. "STATE BANK OF INDIA.NS")
+  const base = t.endsWith(".NS") ? t.slice(0, -3) : t;
+  const compact = base.replace(/[^A-Z0-9]+/g, "");
+  if (COMPANY_TO_TICKER[compact]) return COMPANY_TO_TICKER[compact];
+  if (!compact) return "";
+  return `${compact}.NS`;
+}
+
+function alignEntriesToTickers(tickers, existingEntries) {
+  const byTicker = {};
+  (existingEntries || []).forEach(entry => {
+    const ticker = normalizeTicker(entry?.ticker);
+    if (!ticker || byTicker[ticker]) return;
+    byTicker[ticker] = {
+      ticker,
+      shares: Number.isFinite(entry.shares) ? entry.shares : null,
+      price: Number.isFinite(entry.price) ? entry.price : null,
+      weight: Number.isFinite(entry.weight) ? entry.weight : null,
+    };
+  });
+  return (tickers || []).slice(0, MAX_PORTFOLIO_ENTRIES).map(ticker => {
+    const normalized = normalizeTicker(ticker);
+    return byTicker[normalized] || { ticker: normalized, shares: null, price: null, weight: null };
+  });
+}
+
+function parseOptionalNumber(raw) {
+  if (raw === undefined || raw === null || String(raw).trim() === "") return null;
+  const cleaned = String(raw).replace(/[^\d.-]/g, "").trim();
+  const num = Number(cleaned);
+  return Number.isFinite(num) ? num : null;
+}
+
+function parseCsvRow(line) {
+  const out = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        cur += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (ch === "," && !inQuotes) {
+      out.push(cur.trim());
+      cur = "";
+    } else {
+      cur += ch;
+    }
+  }
+  out.push(cur.trim());
+  return out;
+}
+
+function parsePortfolioCsv(text) {
+  const lines = (text || "").split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  if (lines.length < 1) throw new Error("CSV file is empty.");
+  const firstRow = parseCsvRow(lines[0]).map(h => h.trim().toLowerCase());
+  const headerMap = {
+    ticker: ["ticker", "symbol", "stock", "asset", "company", "company_name", "security", "name", "instrument"],
+    shares: ["shares", "qty", "quantity", "units"],
+    price: ["price", "avg_price", "average_price", "cost"],
+    weight: ["weight", "allocation", "weight_pct", "allocation_pct"],
+  };
+  const hasHeader = firstRow.some(h => [...headerMap.ticker, ...headerMap.shares, ...headerMap.price, ...headerMap.weight].includes(h));
+  const header = hasHeader ? firstRow : ["ticker", "shares", "price", "weight"];
+  const idxOf = aliases => header.findIndex(h => aliases.includes(h));
+  const tickerIdx = idxOf(headerMap.ticker);
+  const sharesIdx = idxOf(headerMap.shares);
+  const priceIdx = idxOf(headerMap.price);
+  const weightIdx = idxOf(headerMap.weight);
+  if (tickerIdx === -1 && header.length < 1) {
+    throw new Error("CSV must include a ticker or symbol column.");
+  }
+
+  const bodyLines = hasHeader ? lines.slice(1) : lines;
+  if (bodyLines.length === 0) {
+    throw new Error("CSV must contain at least one portfolio entry.");
+  }
+  if (bodyLines.length > MAX_PORTFOLIO_ENTRIES) {
+    throw new Error(`CSV supports up to ${MAX_PORTFOLIO_ENTRIES} entries. Remove extra rows and upload again.`);
+  }
+
+  const entries = [];
+  bodyLines.forEach(line => {
+    const row = parseCsvRow(line);
+    const ticker = normalizeTicker(row[tickerIdx >= 0 ? tickerIdx : 0]);
+    if (!ticker) return;
+    entries.push({
+      ticker,
+      shares: parseOptionalNumber(sharesIdx >= 0 ? row[sharesIdx] : null),
+      price: parseOptionalNumber(priceIdx >= 0 ? row[priceIdx] : null),
+      weight: parseOptionalNumber(weightIdx >= 0 ? row[weightIdx] : null),
+    });
+  });
+
+  if (entries.length === 0) throw new Error("No valid portfolio rows found in the uploaded CSV.");
+
+  const seen = new Set();
+  const deduped = [];
+  entries.forEach(entry => {
+    if (!seen.has(entry.ticker) && deduped.length < MAX_PORTFOLIO_ENTRIES) {
+      seen.add(entry.ticker);
+      deduped.push(entry);
+    }
+  });
+
+  return {
+    entries: deduped,
+    tickers: deduped.map(entry => entry.ticker),
+  };
+}
+
+function weightsFromEntries(entries, tickers) {
+  const input = entries || [];
+  const list = tickers || [];
+  const weightMap = {};
+  
+  let totalValue = 0;
+  const valueMap = {};
+  input.forEach(entry => {
+    if (entry?.ticker && Number.isFinite(entry.shares) && Number.isFinite(entry.price) && entry.shares > 0 && entry.price > 0) {
+      const val = entry.shares * entry.price;
+      valueMap[entry.ticker] = val;
+      totalValue += val;
+    }
+  });
+
+  if (totalValue > 0) {
+    list.forEach(ticker => {
+      weightMap[ticker] = (valueMap[ticker] || 0) / totalValue;
+    });
+  } else {
+    input.forEach(entry => {
+      if (entry?.ticker && Number.isFinite(entry.weight)) {
+        weightMap[entry.ticker] = entry.weight > 1 ? entry.weight / 100 : entry.weight;
+      }
+    });
+  }
+
+  const series = list.map(ticker => weightMap[ticker] || 0);
+  const totalWeight = series.reduce((sum, v) => sum + v, 0);
+  if (totalWeight <= 0) return list.map(() => (100 / Math.max(list.length, 1)));
+  return series.map(v => (v / totalWeight) * 100);
+}
+
+// ─── Global State ─────────────────────────────────────────────────────────────
+const useStore = (() => {
+  let listeners = [];
+  let state = {
+    tickers: ["RELIANCE.NS", "TCS.NS", "INFY.NS"],
+    portfolioEntries: DEFAULT_PORTFOLIO_ENTRIES,
+    riskFreeRate: 0.07,
+    portfolioValue: 1000000,
+    backendOnline: true,
+    m3: { result: null, status: "idle" },
+    m4: { result: null, status: "idle" },
+    m5: { result: null, status: "idle" },
+    m7: { result: null, status: "idle" },
+  };
+  function setState(patch) {
+    state = { ...state, ...patch };
+    listeners.forEach(fn => fn(state));
+  }
+  function setModule(key, result) {
+    setState({ [key]: { result, status: "success" } });
+  }
+  function setStatus(key, status) {
+    setState({ [key]: { ...state[key], status } });
+  }
+  return function() {
+    const [s, setS] = useState(state);
+    useEffect(() => {
+      listeners.push(setS);
+      return () => { listeners = listeners.filter(f => f !== setS); };
+    }, []);
+    return [s, setState, setModule, setStatus];
+  };
+})();
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+const fmt = n => isNaN(n) ? "—" : n.toLocaleString("en-IN");
+const fmtPct = (n, d = 2) => isNaN(n) ? "—" : (n * 100).toFixed(d) + "%";
+const fmtMono = (n, d = 3) => isNaN(n) ? "—" : Number(n).toFixed(d);
+const fmtINR = n => isNaN(n) ? "—" : "₹" + Math.abs(n).toLocaleString("en-IN", { maximumFractionDigits: 0 });
+const sign = n => n > 0 ? "+" : n < 0 ? "-" : "";
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+function regimeColor(r) {
+  if (r === "Low-Vol Bull") return "var(--bull)";
+  if (r === "High-Vol Bear") return "var(--bear)";
+  if (r === "Crisis") return "var(--crisis)";
+  return "var(--trans)";
+}
+function regimeBadgeClass(r) {
+  if (r === "Low-Vol Bull") return "regime-bull";
+  if (r === "High-Vol Bear") return "regime-bear";
+  if (r === "Crisis") return "regime-crisis";
+  return "regime-trans";
+}
+function regimeIcon(r) {
+  if (r === "Low-Vol Bull") return "▲";
+  if (r === "High-Vol Bear") return "▼";
+  if (r === "Crisis") return "⚠";
+  return "↔";
+}
+function threatBadge(level) {
+  if (!level) return <span className="badge badge-gray">—</span>;
+  const l = level.toUpperCase();
+  if (l === "HIGH" || l === "CRITICAL_THREAT") return <span className="badge badge-red">● {level}</span>;
+  if (l === "MEDIUM" || l === "ELEVATED_RISK") return <span className="badge badge-amber">● {level}</span>;
+  if (l === "MONITOR") return <span className="badge badge-amber">● MONITOR</span>;
+  return <span className="badge badge-green">● {l === "SAFE" ? "SAFE" : level}</span>;
+}
+
+// ─── Shared Components ────────────────────────────────────────────────────────
+function Spinner({ msg = "" }) {
+  return (
+    <div className="loading-wrap">
+      <div className="spinner" />
+      <p>{msg || "Loading…"}</p>
+    </div>
+  );
+}
+
+function ErrorCard({ msg, onRetry }) {
+  return (
+    <div className="error-wrap">
+      <span className="error-icon">⚠</span>
+      <div className="flex-1">
+        <p className="error-text">{msg}</p>
+        {onRetry && <button className="btn btn-sm btn-outline" style={{ marginTop: 10 }} onClick={onRetry}>Retry</button>}
+      </div>
+    </div>
+  );
+}
+
+function Metric({ label, value, suffix = "", sub, color }) {
+  const cls = color === "green" ? "pos" : color === "red" ? "neg" : "";
+  return (
+    <div className="metric">
+      <div className="metric-label">{label}</div>
+      <div className={`metric-value ${cls}`}>{value}{suffix && <span style={{ fontSize: 14, marginLeft: 3, color: "var(--text3)" }}>{suffix}</span>}</div>
+      {sub && <div className="metric-sub">{sub}</div>}
+    </div>
+  );
+}
+
+function TickerInput({ tickers, onChange }) {
+  const [val, setVal] = useState("");
+  const inputRef = useRef();
+  function add() {
+    const normalized = normalizeTicker(val);
+    if (!normalized) return;
+    if (tickers.length >= MAX_PORTFOLIO_ENTRIES) return;
+    if (!tickers.includes(normalized)) onChange([...tickers, normalized]);
+    setVal("");
+  }
+  function remove(t) { onChange(tickers.filter(x => x !== t)); }
+  function onKey(e) {
+    if (e.key === "Enter" || e.key === ",") { e.preventDefault(); add(); }
+    if (e.key === "Backspace" && !val && tickers.length > 0) onChange(tickers.slice(0, -1));
+  }
+  return (
+    <div className="ticker-input-wrap" onClick={() => inputRef.current?.focus()}>
+      {tickers.map(t => (
+        <span key={t} className="ticker-tag">
+          {t}
+          <button onClick={() => remove(t)}>×</button>
+        </span>
+      ))}
+      {tickers.length < MAX_PORTFOLIO_ENTRIES && (
+        <input
+          ref={inputRef}
+          className="ticker-inline-input"
+          placeholder={tickers.length === 0 ? "Type ticker…" : "Add more…"}
+          value={val}
+          onChange={e => setVal(e.target.value)}
+          onKeyDown={onKey}
+          onBlur={add}
+        />
+      )}
+      <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--text3)" }}>{tickers.length}/{MAX_PORTFOLIO_ENTRIES}</span>
+    </div>
+  );
+}
+
+function PortfolioCsvImport({ onImport }) {
+  const [status, setStatus] = useState("");
+  const [statusKind, setStatusKind] = useState("");
+
+  async function handleFileUpload(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      setStatusKind("err");
+      setStatus("Please upload a valid .csv file.");
+      event.target.value = "";
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      const parsed = parsePortfolioCsv(text);
+      onImport(parsed);
+      setStatusKind("ok");
+      setStatus(`Imported ${parsed.entries.length} entries from ${file.name}.`);
+    } catch (err) {
+      setStatusKind("err");
+      setStatus(err?.message || "CSV import failed.");
+    }
+    event.target.value = "";
+  }
+
+  return (
+    <div className="import-wrap">
+      <label>Portfolio CSV Import</label>
+      <div className="import-row">
+        <input className="input-xs" type="file" accept=".csv,text/csv" onChange={handleFileUpload} />
+      </div>
+      <p className="import-hint">
+        Include a header row with <span className="mono">ticker</span>, <span className="mono">symbol</span>, or <span className="mono">company</span> when available (headerless files are also accepted).
+        Company names are auto-converted to ticker symbols when recognized.
+        Optional columns: <span className="mono">shares</span>, <span className="mono">price</span>, <span className="mono">weight</span>.
+        Maximum {MAX_PORTFOLIO_ENTRIES} entries per file.
+      </p>
+      {status && <p className={`import-status ${statusKind}`}>{status}</p>}
+    </div>
+  );
+}
+
+function LoginGate({ onAuthenticated, authError }) {
+  const [mode, setMode] = useState("signin");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [consent, setConsent] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function submit(event) {
+    event.preventDefault();
+    const cleanUsername = username.trim().toLowerCase();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password;
+
+    if (!consent) {
+      setError("Please accept the disclaimer to continue.");
+      return;
+    }
+    if (!cleanUsername || !cleanPassword) {
+      setError("Please enter your username and password.");
+      return;
+    }
+    if (mode === "signup" && !cleanEmail) {
+      setError("Please enter your email address.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    try {
+      if (mode === "signup") {
+        const reg = await apiPost("/api/auth/register", {
+          username: cleanUsername,
+          email: cleanEmail,
+          password: cleanPassword,
+        }, { skipAuth: true });
+        if (reg?.token && reg?.user) {
+          onAuthenticated(reg);
+          return;
+        }
+      }
+      const data = await apiPost("/api/auth/login", {
+        username: cleanUsername,
+        password: cleanPassword,
+      }, { skipAuth: true });
+      onAuthenticated(data);
+    } catch (err) {
+      setError(err?.message || "Authentication failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="auth-shell">
+      <div className="auth-wrap">
+        <section className="auth-panel">
+          <div className="auth-brand">
+            <div className="auth-logo-icon">CV</div>
+            <div>
+              <div className="auth-logo-text">ClearView Analytics</div>
+              <div className="auth-logo-sub">PORTFOLIO INTELLIGENCE</div>
+            </div>
+          </div>
+          <h1 className="auth-title">Institutional-grade<br/><em>portfolio analytics</em></h1>
+          <p className="auth-sub">Built for Indian equity markets. Stress-test your holdings, optimise allocations, and decode regime shifts all in one place.</p>
+          <div className="auth-disclaimer">
+            <strong>Important Disclaimer</strong><br/>
+            ClearView Analytics provides analytics only and does not constitute financial advice. All investment decisions are solely your responsibility.
+          </div>
+          <div className="auth-features">
+            {[
+              ["◎", "Performance & Risk - Efficient frontier, VaR, factor decomposition"],
+              ["⚡", "Stress Testing - 13 crisis scenarios including geopolitical and rate shocks"],
+              ["⬡", "Allocation Strategy - HRP & Black-Litterman optimisation"],
+              ["◉", "Regime Outlook - HMM + GARCH market state detection"],
+            ].map(([icon, text]) => (
+              <div key={icon} className="auth-feature">
+                <div className="auth-feature-icon">{icon}</div>
+                <span>{text}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+        <section className="auth-panel">
+          <div className="toggle-group" style={{ marginBottom: 14 }}>
+            <button type="button" className={`toggle-btn ${mode === "signin" ? "active" : ""}`} onClick={() => { setMode("signin"); setError(""); }}>Sign In</button>
+            <button type="button" className={`toggle-btn ${mode === "signup" ? "active" : ""}`} onClick={() => { setMode("signup"); setError(""); }}>Sign Up</button>
+          </div>
+          <form className="auth-form" onSubmit={submit}>
+            <div>
+              <label>Username or Email</label>
+              <input value={username} onChange={e => setUsername(e.target.value)} placeholder="your_username or name@domain.com" autoComplete="username" />
+            </div>
+            {mode === "signup" && (
+              <div>
+                <label>Email</label>
+                <input value={email} onChange={e => setEmail(e.target.value)} placeholder="name@domain.com" autoComplete="email" />
+              </div>
+            )}
+            <div>
+              <label>Password</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" autoComplete={mode === "signup" ? "new-password" : "current-password"} />
+            </div>
+            <label className="consent-row">
+              <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} style={{ width: 14, height: 14 }} />
+              I understand this is analytics only, not financial advice.
+            </label>
+            {(error || authError) && <p className="auth-error">{error || authError}</p>}
+            <button className="btn btn-primary btn-full" type="submit" disabled={loading}>
+              {loading ? "Please wait..." : mode === "signup" ? "Create Account" : "Sign In"}
+            </button>
+            <p className="auth-note">
+              {mode === "signup"
+                ? "Create once, sign in from any device."
+                : "Use your username or email to access the platform."}
+            </p>
+          </form>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function Tabs({ tabs, active, onChange }) {
+  return (
+    <div className="tabs">
+      {tabs.map(t => (
+        <button key={t.id} className={`tab${active === t.id ? " active" : ""}`} onClick={() => onChange(t.id)}>
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function WeightDonut({ weights, title }) {
+  const entries = Object.entries(weights || {}).sort((a, b) => b[1] - a[1]);
+  const colors = ["var(--accent)","var(--success)","var(--info)","var(--warning)","var(--danger)","var(--accent2)","var(--cyan)","var(--bull)"];
+  const total = entries.reduce((s, [, v]) => s + v, 0);
+  // Simple SVG donut
+  const r = 56, cx = 70, cy = 70, stroke = 18;
+  const circ = 2 * Math.PI * r;
+  let offset = 0;
+  // A uniform 2px separator between segments improves readability without
+  // distorting proportions (each arc length stays exactly proportional).
+  const slices = entries.map(([k, v], i) => {
+    const pct = total > 0 ? v / total : 0;
+    const seg = pct * circ;
+    const dash = Math.max(seg - 2, 0.0001);
+    const gap = circ - dash;
+    const sl = (
+      <circle
+        key={k}
+        cx={cx} cy={cy} r={r}
+        fill="none"
+        stroke={colors[i % colors.length]}
+        strokeWidth={stroke}
+        strokeDasharray={`${dash} ${gap}`}
+        strokeDashoffset={-offset}
+        style={{ transition: "stroke-dasharray var(--transition-med)" }}
+      />
+    );
+    offset += seg;
+    return sl;
+  });
+
+  return (
+    <div className="donut-wrap">
+      {title && <p style={{ fontSize: 12, color: "var(--text3)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".06em" }}>{title}</p>}
+      <svg width="140" height="140" style={{ transform: "rotate(-90deg)", filter: "drop-shadow(0 6px 10px rgba(0,0,0,.35))", overflow: "visible" }}>
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--bg4)" strokeWidth={stroke} />
+        {slices}
+      </svg>
+      <div className="stack-sm" style={{ width: "100%" }}>
+        {entries.slice(0, 8).map(([k, v], i) => (
+          <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+            <div style={{ width: 8, height: 8, borderRadius: 2, background: colors[i % colors.length], flexShrink: 0 }} />
+            <span style={{ flex: 1, color: "var(--text2)", fontFamily: "var(--font-mono)" }}>{k.replace(".NS", "")}</span>
+            <span style={{ color: "var(--text)", fontFamily: "var(--font-mono)" }}>{fmtPct(v)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FrontierChart({ frontier, specialPoints }) {
+  if (!frontier || frontier.length === 0) return <p style={{ color: "var(--text3)", fontSize: 13 }}>No frontier data.</p>;
+  const allX = [...frontier.map(p => p.volatility * 100), ...(specialPoints || []).map(p => p.x)];
+  const allY = [...frontier.map(p => p.return * 100), ...(specialPoints || []).map(p => p.y)];
+  // Additive padding (not multiplicative): expands the bounds outward
+  // regardless of sign, so the curve renders correctly even when expected
+  // returns are negative. Falls back gracefully on a degenerate (zero) range.
+  const rawXMin = Math.min(...allX), rawXMax = Math.max(...allX);
+  const rawYMin = Math.min(...allY), rawYMax = Math.max(...allY);
+  const xPad = (rawXMax - rawXMin) * 0.08 || Math.abs(rawXMax) * 0.08 || 1;
+  const yPad = (rawYMax - rawYMin) * 0.1 || Math.abs(rawYMax) * 0.1 || 1;
+  const xMin = Math.max(0, rawXMin - xPad), xMax = rawXMax + xPad;
+  const yMin = rawYMin - yPad, yMax = rawYMax + yPad;
+  const W = 480, H = 260, PAD = { t: 20, r: 20, b: 40, l: 50 };
+  const cW = W - PAD.l - PAD.r, cH = H - PAD.t - PAD.b;
+  const px = v => PAD.l + ((v - xMin) / (xMax - xMin)) * cW;
+  const py = v => PAD.t + (1 - (v - yMin) / (yMax - yMin)) * cH;
+  const path = frontier.map((p, i) => `${i === 0 ? "M" : "L"}${px(p.volatility * 100).toFixed(1)},${py(p.return * 100).toFixed(1)}`).join(" ");
+  const baseY = H - PAD.b;
+  const first = frontier[0], last = frontier[frontier.length - 1];
+  const areaPath =
+    `M${px(first.volatility * 100).toFixed(1)},${baseY.toFixed(1)} ` +
+    frontier.map(p => `L${px(p.volatility * 100).toFixed(1)},${py(p.return * 100).toFixed(1)}`).join(" ") +
+    ` L${px(last.volatility * 100).toFixed(1)},${baseY.toFixed(1)} Z`;
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", maxHeight: 280 }}>
+      <defs>
+        <linearGradient id="cv-frontier-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {/* Area fill under the frontier (depth cue; data points unchanged) */}
+      <path d={areaPath} fill="url(#cv-frontier-fill)" stroke="none" />
+      {/* Grid lines */}
+      {[0.25, 0.5, 0.75].map(t => (
+        <line key={t} x1={PAD.l} x2={W - PAD.r} y1={PAD.t + t * cH} y2={PAD.t + t * cH} stroke="var(--border)" strokeDasharray="4 4" />
+      ))}
+      {/* Axes */}
+      <line x1={PAD.l} x2={PAD.l} y1={PAD.t} y2={H - PAD.b} stroke="var(--border2)" />
+      <line x1={PAD.l} x2={W - PAD.r} y1={H - PAD.b} y2={H - PAD.b} stroke="var(--border2)" />
+      {/* Axis labels */}
+      <text x={PAD.l - 6} y={PAD.t + cH * 0.1} textAnchor="end" fontSize={10} fill="var(--text3)">{((yMin + (yMax - yMin) * 0.9)).toFixed(1)}%</text>
+      <text x={PAD.l - 6} y={PAD.t + cH * 0.9} textAnchor="end" fontSize={10} fill="var(--text3)">{((yMin + (yMax - yMin) * 0.1)).toFixed(1)}%</text>
+      <text x={PAD.l} y={H - 8} textAnchor="start" fontSize={10} fill="var(--text3)">{xMin.toFixed(1)}%</text>
+      <text x={W - PAD.r} y={H - 8} textAnchor="end" fontSize={10} fill="var(--text3)">{xMax.toFixed(1)}%</text>
+      <text x={W / 2} y={H - 4} textAnchor="middle" fontSize={10} fill="var(--text3)">Volatility</text>
+      <text x={10} y={H / 2} textAnchor="middle" fontSize={10} fill="var(--text3)" transform={`rotate(-90,10,${H / 2})`}>Return</text>
+      {/* Frontier curve */}
+      <path d={path} fill="none" stroke="var(--accent)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 2px 4px rgba(74,144,226,.35))" }} />
+      {/* Special points */}
+      {(specialPoints || []).map((sp, i) => (
+        <g key={i}>
+          <circle cx={px(sp.x)} cy={py(sp.y)} r={6} fill={sp.fill} stroke="var(--bg2)" strokeWidth={2} />
+          <text x={px(sp.x) + 9} y={py(sp.y) + 4} fontSize={10} fill={sp.fill}>{sp.label}</text>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+// ─── Pages ────────────────────────────────────────────────────────────────────
+
+// DASHBOARD
+function Dashboard({ setPage }) {
+  const [store, setState, setModule, setStatus] = useStore();
+  const [tickers, setTickers] = useState(store.tickers);
+  const [rf, setRf] = useState(() => +(store.riskFreeRate * 100).toFixed(4));
+  const [pv, setPv] = useState(store.portfolioValue);
+
+  useEffect(() => {
+    let interval;
+    async function check() {
+      try {
+        await apiGet("/api/health");
+        setState({ backendOnline: true });
+      } catch { setState({ backendOnline: false }); }
+    }
+    check();
+    interval = setInterval(check, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  function update() {
+    setState({
+      tickers,
+      portfolioEntries: alignEntriesToTickers(tickers, store.portfolioEntries),
+      riskFreeRate: rf / 100,
+      portfolioValue: pv,
+    });
+  }
+
+  function importPortfolioCsv(parsed) {
+    const importedTickers = parsed.tickers;
+    const importedValue = parsed.entries.reduce((sum, entry) => {
+      const shares = Number.isFinite(entry.shares) ? entry.shares : 0;
+      const price = Number.isFinite(entry.price) ? entry.price : 0;
+      return sum + shares * price;
+    }, 0);
+    setTickers(importedTickers);
+    if (importedValue > 0) setPv(Math.round(importedValue));
+    setState({
+      tickers: importedTickers,
+      portfolioEntries: parsed.entries,
+      portfolioValue: importedValue > 0 ? Math.round(importedValue) : store.portfolioValue,
+    });
+  }
+
+  const modules = [
+    { key: "m3", label: "Performance & Risk", icon: "◎", page: "portfolio", color: "var(--accent)",
+      getMetrics: r => r ? [
+        { l: "Expected Return", v: fmtPct(r.max_sharpe_portfolio?.expected_return) },
+        { l: "Sharpe Ratio", v: fmtMono(r.max_sharpe_portfolio?.sharpe_ratio) },
+        { l: "Volatility", v: fmtPct(r.max_sharpe_portfolio?.volatility) },
+      ] : [] },
+    { key: "m4", label: "Stress Scenarios", icon: "⚡", page: "stress", color: "var(--amber)",
+      getMetrics: r => r ? [
+        { l: "Risk Level", v: r.summary?.risk_level || "—" },
+        { l: "Worst Loss", v: fmtINR(r.summary?.worst_loss?.pnl_inr) },
+        { l: "VaR 95%", v: fmtINR(r.risk_metrics?.var_parametric_inr) },
+      ] : [] },
+    { key: "m5", label: "Allocation Strategy", icon: "⬡", page: "optimisation", color: "var(--green)",
+      getMetrics: r => r ? [
+        { l: "Best Method", v: (r.best_method || "—").replace(/_/g, " ") },
+        { l: "Sharpe", v: fmtMono(r.recommendation?.sharpe_ratio) },
+        { l: "Health Score", v: r.recommendation?.health_score || "—" },
+      ] : [] },
+    { key: "m7", label: "Regime Outlook", icon: "◉", page: "regime", color: "var(--accent2)",
+      getMetrics: r => r ? [
+        { l: "Regime", v: r.current_regime || "—" },
+        { l: "Current Volatility", v: fmtPct(r.garch_current_vol) },
+        { l: "30-Day Outlook", v: fmtPct(r.garch_30d_forecast) },
+      ] : [] },
+  ];
+
+  const insights = [];
+  if (store.m7.result) {
+    const r = store.m7.result;
+    const p = r.regime_probabilities?.[r.current_regime] || 0;
+    insights.push({ text: `Regime Outlook indicates "${r.current_regime}" conditions with ${(p * 100).toFixed(0)}% confidence.`, color: "var(--accent2)" });
+  }
+  if (store.m5.result) {
+    const r = store.m5.result;
+    insights.push({ text: `Allocation Strategy selected ${(r.best_method || "").replace(/_/g, " ")} as the strongest approach right now.`, color: "var(--green)" });
+  }
+  if (store.m3.result) {
+    const r = store.m3.result;
+    insights.push({ text: `Performance & Risk estimates return at ${fmtPct(r.max_sharpe_portfolio?.expected_return)} with risk at ${fmtPct(r.max_sharpe_portfolio?.volatility)}.`, color: "var(--accent)" });
+  }
+
+  return (
+    <div className="page fade-in">
+      <div className="section-header">
+        <h1 className="section-title">Executive Dashboard</h1>
+        <p className="section-sub">See your portfolio status, key signals, and next actions in one clear view.</p>
+        <div className="section-line" />
+      </div>
+
+      {/* Executive KPI strip */}
+      <div className="grid-4" style={{ marginBottom: 20 }}>
+        <Metric label="Portfolio Value" value={fmtINR(store.portfolioValue)} sub="Total mandate" />
+        <Metric label="Active Holdings" value={store.tickers.length} sub={`of ${MAX_PORTFOLIO_ENTRIES} max`} />
+        <Metric label="Expected Return" value={store.m3.result ? fmtPct(store.m3.result.max_sharpe_portfolio?.expected_return) : "—"} color={store.m3.result ? "green" : undefined} sub="Max Sharpe" />
+        <Metric label="Market Regime" value={store.m7.result?.current_regime || "—"} sub={store.m7.result ? "HMM detected" : "Not yet run"} />
+      </div>
+
+      {/* Context panel */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <span style={{ fontSize: 11, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".06em", fontWeight: 600 }}>Portfolio Context</span>
+        </div>
+        <div style={{ marginBottom: 14 }}>
+          <PortfolioCsvImport onImport={importPortfolioCsv} />
+        </div>
+        <div className="form-grid" style={{ marginBottom: 14 }}>
+          <div className="form-field">
+            <label>Active Tickers</label>
+            <TickerInput tickers={tickers} onChange={setTickers} />
+          </div>
+          <div className="form-field">
+            <label>Risk-Free Rate (%)</label>
+            <input type="number" value={rf} onChange={e => setRf(+e.target.value)} step="0.5" min="0" max="20" />
+          </div>
+          <div className="form-field">
+            <label>Portfolio Value (₹)</label>
+            <input type="number" value={pv} onChange={e => setPv(+e.target.value)} step="100000" />
+          </div>
+        </div>
+        <p style={{ fontSize: 12, color: "var(--text3)", marginBottom: 10 }}>
+          Tip: Upload a CSV first for faster setup, then fine-tune tickers manually if needed.
+        </p>
+        <button className="btn btn-primary btn-sm" onClick={update}>Update Context</button>
+      </div>
+
+      {/* Module grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 14, marginBottom: 24 }}>
+        {modules.map(mod => {
+          const ms = store[mod.key];
+          const metrics = mod.getMetrics(ms.result);
+          return (
+            <div key={mod.key}
+              className="card"
+              style={{ cursor: "pointer", borderLeft: `3px solid ${mod.color}`, transition: "background .15s" }}
+              onClick={() => setPage(mod.page)}
+              onMouseEnter={e => e.currentTarget.style.background = "var(--bg3)"}
+              onMouseLeave={e => e.currentTarget.style.background = "var(--bg2)"}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", fontFamily: "var(--font-sans)", letterSpacing: "-0.01em" }}>{mod.label}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+                    <div className={`nav-dot ${ms.status}`} />
+                    <span style={{ fontSize: 11, color: ms.status === "success" ? "var(--green)" : ms.status === "error" ? "var(--red)" : ms.status === "loading" ? "var(--amber)" : "var(--text3)" }}>
+                      {ms.status === "idle" ? "Not yet run" : ms.status === "loading" ? "Processing…" : ms.status === "success" ? "Ready" : "Error"}
+                    </span>
+                  </div>
+                </div>
+                <span style={{ fontSize: 18, color: mod.color, opacity: .7 }}>→</span>
+              </div>
+              {metrics.length > 0 ? (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginTop: 8 }}>
+                  {metrics.map(m => (
+                    <div key={m.l}>
+                      <p style={{ fontSize: 10, color: "var(--text3)", marginBottom: 2 }}>{m.l}</p>
+                      <p style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text)", fontWeight: 500 }}>{m.v}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ fontSize: 12, color: "var(--text3)", fontStyle: "italic", marginTop: 8 }}>Run module to see results</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Insights */}
+      {insights.length > 0 && (
+        <div>
+          <p style={{ fontSize: 11, color: "var(--text3)", textTransform: "uppercase", letterSpacing: ".06em", fontWeight: 600, marginBottom: 10 }}>Insights</p>
+          <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 4 }}>
+            {insights.map((ins, i) => (
+              <div key={i} className="card-sm" style={{ minWidth: 260, borderLeft: `3px solid ${ins.color}`, flexShrink: 0 }}>
+                <p style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>{ins.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// PORTFOLIO (M3)
+function Portfolio() {
+  const [store, setState, setModule, setStatus] = useStore();
+  const [tickers, setTickers] = useState(store.tickers);
+  const [period, setPeriod] = useState("2y");
+  const [rf, setRf] = useState(() => +(store.riskFreeRate * 100).toFixed(4));
+  const [weights, setWeights] = useState(weightsFromEntries(store.portfolioEntries, store.tickers));
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [tab, setTab] = useState("frontier");
+  const ms = store.m3;
+
+  useEffect(() => {
+    setTickers(store.tickers);
+    setWeights(weightsFromEntries(store.portfolioEntries, store.tickers));
+    setRf(+(store.riskFreeRate * 100).toFixed(4));
+  }, [store.tickers, store.portfolioEntries, store.riskFreeRate]);
+
+  function syncTickers(nextTickers) {
+    const normalized = nextTickers.slice(0, MAX_PORTFOLIO_ENTRIES);
+    setTickers(normalized);
+    setWeights(weightsFromEntries(store.portfolioEntries, normalized));
+    setState({ tickers: normalized, portfolioEntries: alignEntriesToTickers(normalized, store.portfolioEntries) });
+  }
+
+  function importPortfolioCsv(parsed) {
+    setTickers(parsed.tickers);
+    setWeights(weightsFromEntries(parsed.entries, parsed.tickers));
+    setState({ tickers: parsed.tickers, portfolioEntries: parsed.entries });
+  }
+
+  async function run() {
+    setLoading(true); setError(null); setStatus("m3", "loading");
+    try {
+      const total = weights.reduce((a, b) => a + b, 0);
+      const norm = weights.map(w => w / total);
+      const res = await apiPost("/api/m3/optimize", { tickers, current_weights: norm, period, risk_free_rate: rf / 100 });
+      setModule("m3", res);
+    } catch (e) { setError(e.message); setStatus("m3", "error"); }
+    setLoading(false);
+  }
+
+  const d = ms.result;
+  const PERIODS = ["6mo", "1y", "2y", "5y"];
+
+  return (
+    <div className="page fade-in">
+      <div className="section-header">
+        <h1 className="section-title">Portfolio Performance & Risk</h1>
+        <p className="section-sub">Understand expected return, risk level, and recommended allocation in simple terms.</p>
+        <div className="section-line" />
+      </div>
+
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div style={{ marginBottom: 14 }}>
+          <PortfolioCsvImport onImport={importPortfolioCsv} />
+        </div>
+        <div className="form-grid" style={{ marginBottom: 16 }}>
+          <div className="form-field" style={{ gridColumn: "1 / -1" }}>
+            <label>Tickers</label>
+            <TickerInput tickers={tickers} onChange={syncTickers} />
+          </div>
+          <div className="form-field">
+            <label>Period</label>
+            <div className="toggle-group">
+              {PERIODS.map(p => <button key={p} className={`toggle-btn${period === p ? " active" : ""}`} onClick={() => setPeriod(p)}>{p}</button>)}
+            </div>
+          </div>
+          <div className="form-field">
+            <label>Risk-Free Rate: {rf.toFixed(1)}%</label>
+            <input type="range" min="0" max="15" step="0.5" value={rf} onChange={e => setRf(+e.target.value)} style={{ width: "100%" }} />
+          </div>
+        </div>
+        <div className="stack-sm" style={{ marginBottom: 16 }}>
+          <label>Current Weights</label>
+          {tickers.map((t, i) => (
+            <div key={t} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span className="mono" style={{ width: 120, fontSize: 12, color: "var(--text2)", flexShrink: 0 }}>{t}</span>
+              <input type="number" value={(weights[i] || 0).toFixed(1)} onChange={e => { const w = [...weights]; w[i] = +e.target.value; setWeights(w); }} style={{ width: 80 }} min={0} max={100} />
+              <span style={{ fontSize: 12, color: "var(--text3)" }}>%</span>
+            </div>
+          ))}
+        </div>
+        <p style={{ fontSize: 12, color: "var(--text3)", marginBottom: 8 }}>
+          Keep the list focused for clearer results. Maximum supported entries: {MAX_PORTFOLIO_ENTRIES}.
+        </p>
+        <button className="btn btn-primary btn-full" onClick={run} disabled={loading || tickers.length < 2}>
+          {loading ? "Running…" : "Run Analysis"}
+        </button>
+      </div>
+
+      {loading && <Spinner msg="Optimising portfolio — analysing historical returns and covariance…" />}
+      {error && <ErrorCard msg={error} onRetry={run} />}
+      {d && !loading && (
+        <div className="fade-in">
+          <Tabs
+            tabs={[{ id: "frontier", label: "Risk vs Return" }, { id: "allocations", label: "Suggested Mix" }, { id: "risk", label: "Risk Snapshot" }, { id: "correlation", label: "Move Together" }]}
+            active={tab} onChange={setTab}
+          />
+          {tab === "frontier" && (
+            <div className="card">
+              <h3 style={{ marginBottom: 16 }}>Risk vs Return Curve</h3>
+              <FrontierChart
+                frontier={d.efficient_frontier}
+                specialPoints={[
+                  { x: d.min_variance_portfolio.volatility * 100, y: d.min_variance_portfolio.expected_return * 100, label: "Min Variance", fill: "#6c63ff" },
+                  { x: d.max_sharpe_portfolio.volatility * 100, y: d.max_sharpe_portfolio.expected_return * 100, label: "Max Sharpe", fill: "#22d984" },
+                  { x: d.current_portfolio.volatility * 100, y: d.current_portfolio.expected_return * 100, label: "Your Portfolio", fill: "#ff4d6d" },
+                ]}
+              />
+              <div className="divider" />
+              <table>
+                <thead><tr><th>Metric</th><th className="td-right">Your Portfolio</th><th className="td-right">Min Variance</th><th className="td-right">Max Sharpe</th></tr></thead>
+                <tbody>
+                  {[["Expected Return", "expected_return", fmtPct], ["Volatility", "volatility", fmtPct], ["Sharpe Ratio", "sharpe_ratio", v => fmtMono(v)]].map(([l, k, f]) => (
+                    <tr key={k}><td>{l}</td><td className="td-right td-mono">{f(d.current_portfolio[k])}</td><td className="td-right td-mono">{f(d.min_variance_portfolio[k])}</td><td className="td-right td-mono">{f(d.max_sharpe_portfolio[k])}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {tab === "allocations" && (
+            <div className="card">
+              <div className="grid-2" style={{ marginBottom: 24 }}>
+                <WeightDonut weights={d.min_variance_portfolio.weights} title="Min Variance" />
+                <WeightDonut weights={d.max_sharpe_portfolio.weights} title="Max Sharpe" />
+              </div>
+              <table>
+                <thead><tr><th>Ticker</th><th className="td-right">Min-Var</th><th className="td-right">Max-Sharpe</th><th className="td-right">Difference</th></tr></thead>
+                <tbody>
+                  {d.tickers.map(t => {
+                    const mv = (d.min_variance_portfolio.weights[t] || 0) * 100;
+                    const ms2 = (d.max_sharpe_portfolio.weights[t] || 0) * 100;
+                    return <tr key={t}><td className="td-mono">{t}</td><td className="td-right td-mono">{mv.toFixed(1)}%</td><td className="td-right td-mono">{ms2.toFixed(1)}%</td><td className="td-right td-mono" style={{ color: ms2 - mv >= 0 ? "var(--green)" : "var(--red)" }}>{sign(ms2 - mv)}{(ms2 - mv).toFixed(1)}%</td></tr>;
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {tab === "risk" && (
+            <div className="stack">
+              <div className="grid-4">
+                <Metric label="VaR 95%" value={fmtPct(d.risk_metrics?.var_95_pct)} color="red" />
+                <Metric label="Deep-Loss Estimate" value={fmtPct(d.risk_metrics?.cvar_95_pct)} color="red" />
+                <Metric label="Max Drawdown" value={fmtPct(d.risk_metrics?.max_drawdown)} color="amber" />
+                <Metric label="Ulcer Index" value={fmtMono(d.risk_metrics?.ulcer_index, 4)} />
+              </div>
+              {d.risk_metrics?.recovery_days > 0 && <p style={{ fontSize: 13, color: "var(--text3)" }}>Recovery time: ~{d.risk_metrics.recovery_days} trading days</p>}
+              {d.factor_analysis && (
+                <div className="card">
+                  <p style={{ fontSize: 12, color: "var(--text3)", marginBottom: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".06em" }}>Factor Decomposition</p>
+                  <div className="pbar" style={{ height: 10, marginBottom: 8 }}>
+                    <div className="pbar-fill" style={{ width: `${(d.factor_analysis.r_squared * 100).toFixed(0)}%`, background: "var(--accent)" }} />
+                  </div>
+                  <p style={{ fontSize: 13, color: "var(--text2)" }}>
+                    <strong style={{ color: "var(--text)" }}>{(d.factor_analysis.r_squared * 100).toFixed(0)}%</strong> of your portfolio moves with the overall market.
+                    The remaining <strong style={{ color: "var(--text)" }}>{((1 - d.factor_analysis.r_squared) * 100).toFixed(0)}%</strong> is driven by your specific stock selection.
+                  </p>
+                  <div className="grid-3" style={{ marginTop: 12 }}>
+                    <Metric label="Systematic Vol" value={fmtPct(d.factor_analysis.systematic_volatility)} />
+                    <Metric label="Idiosyncratic Vol" value={fmtPct(d.factor_analysis.idiosyncratic_volatility)} />
+                    <Metric label="R-Squared" value={fmtMono(d.factor_analysis.r_squared)} />
+                  </div>
+                </div>
+              )}
+              {d.market_regime && (
+                <div className="card-sm">
+                  <p style={{ fontSize: 12, color: "var(--text3)", marginBottom: 6 }}>Simple Market Regime</p>
+                  <span className={`regime-badge ${regimeBadgeClass(d.market_regime.regime)}`}>{regimeIcon(d.market_regime.regime)} {d.market_regime.regime}</span>
+                  <p style={{ fontSize: 12, color: "var(--text3)", marginTop: 6 }}>Current annualised vol: {fmtPct(d.market_regime.current_vol_annualized)}</p>
+                </div>
+              )}
+            </div>
+          )}
+          {tab === "correlation" && (
+            <div className="card" style={{ overflowX: "auto" }}>
+              <h3 style={{ marginBottom: 16 }}>How Your Stocks Move Together</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th></th>
+                    {d.tickers.map(t => <th key={t} className="td-right" style={{ fontFamily: "var(--font-mono)", fontSize: 10 }}>{t.replace(".NS", "")}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {d.tickers.map(row => (
+                    <tr key={row}>
+                      <td style={{ fontFamily: "var(--font-mono)", fontSize: 11 }}>{row.replace(".NS", "")}</td>
+                      {d.tickers.map(col => {
+                        const val = d.correlation_matrix[row]?.[col] ?? 0;
+                        const isDiag = row === col;
+                        // Encode magnitude: blue = positive co-movement, red = negative.
+                        const mag = Math.min(Math.abs(val), 1);
+                        const alpha = (0.06 + mag * 0.44).toFixed(3);
+                        const bg = isDiag
+                          ? "var(--corr-diag)"
+                          : val >= 0
+                            ? `rgba(74,144,226,${alpha})`
+                            : `rgba(239,83,80,${alpha})`;
+                        return (
+                          <td key={col} className="corr-cell"
+                            style={{ background: bg, color: "var(--text)" }}>
+                            {val.toFixed(2)}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// STRESS TEST (M4)
+function StressTest() {
+  const [store, setState, setModule, setStatus] = useStore();
+  const [tickers, setTickers] = useState(store.tickers);
+  const [weights, setWeights] = useState(() => weightsFromEntries(store.portfolioEntries, store.tickers));
+  const [pv, setPv] = useState(store.portfolioValue);
+  const [rf, setRf] = useState(() => +(store.riskFreeRate * 100).toFixed(4));
+  const [mode, setMode] = useState("ALL");
+  const [custom, setCustom] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [expanded, setExpanded] = useState(null);
+  const ms = store.m4;
+
+  useEffect(() => {
+    setWeights(weightsFromEntries(store.portfolioEntries, tickers));
+  }, [tickers, store.portfolioEntries]);
+
+  const CODES = ["CRISIS_1","CRISIS_2","MOD_1","MOD_2","MOD_3","MILD_1","MILD_2","INDIA_1","INDIA_2","INDIA_3","SECTOR_1","SECTOR_2","POS_1","POS_2"];
+
+  async function run() {
+    setLoading(true); setError(null); setStatus("m4", "loading");
+    try {
+      const scenarios = mode === "CUSTOM" ? custom.join(",") : mode;
+      const totalWeight = weights.reduce((a, b) => a + b, 0);
+      const normWeights = weights.map(w => w / totalWeight);
+      const res = await apiPost("/api/m4/scenarios", { tickers, current_weights: normWeights, portfolio_value: pv, risk_free_rate: rf / 100, scenarios });
+      setModule("m4", res);
+    } catch (e) { setError(e.message); setStatus("m4", "error"); }
+    setLoading(false);
+  }
+
+  const d = ms.result;
+  const riskColor = { HIGH: "var(--red)", MODERATE: "var(--amber)", ACCEPTABLE: "var(--green)", high: "var(--red)", moderate: "var(--amber)", acceptable: "var(--green)" };
+
+  return (
+    <div className="page fade-in">
+      <div className="section-header">
+        <h1 className="section-title">Stress Test Scenarios</h1>
+        <p className="section-sub">Check how your portfolio may perform during difficult market conditions.</p>
+        <div className="section-line" />
+      </div>
+
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div className="form-grid" style={{ marginBottom: 16 }}>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <label>Tickers</label>
+            <TickerInput tickers={tickers} onChange={setTickers} />
+          </div>
+          <div><label>Portfolio Value (₹)</label><input type="number" value={pv} onChange={e => setPv(+e.target.value)} /></div>
+          <div><label>Risk-Free Rate (%)</label><input type="number" value={rf} onChange={e => setRf(+e.target.value)} step="0.5" /></div>
+        </div>
+        <div className="stack-sm" style={{ marginBottom: 16 }}>
+          <label>Current Weights</label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {tickers.map((t, i) => (
+              <div key={t} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span className="mono" style={{ fontSize: 11, color: "var(--text3)", width: 100 }}>{t}</span>
+                <input type="number" value={(weights[i] || 0).toFixed(1)} onChange={e => { const w = [...weights]; w[i] = +e.target.value; setWeights(w); }} style={{ width: 64 }} />
+                <span style={{ fontSize: 11, color: "var(--text3)" }}>%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <label>Scenarios</label>
+          <div className="toggle-group" style={{ marginTop: 6 }}>
+            {["ALL", "SEVERE", "CUSTOM"].map(m => <button key={m} className={`toggle-btn${mode === m ? " active" : ""}`} onClick={() => setMode(m)}>{m === "ALL" ? "All" : m === "SEVERE" ? "Severe Only" : "Custom"}</button>)}
+          </div>
+          {mode === "CUSTOM" && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+              {CODES.map(c => (
+                <label key={c} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, cursor: "pointer", color: "var(--text2)" }}>
+                  <input type="checkbox" checked={custom.includes(c)} onChange={e => setCustom(e.target.checked ? [...custom, c] : custom.filter(x => x !== c))} style={{ width: "auto" }} />
+                  {c.replace(/_/g, " ")}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+        <button className="btn btn-primary btn-full" onClick={run} disabled={loading || tickers.length < 2}>
+          {loading ? "Running…" : "Run Stress Test"}
+        </button>
+      </div>
+
+      {loading && <Spinner msg="Running scenarios against live market data…" />}
+      {error && <ErrorCard msg={error} onRetry={run} />}
+      {d && !loading && (
+        <div className="fade-in stack">
+          {/* Summary */}
+          <div className="grid-3">
+            <div className="metric">
+              <div className="metric-label">Worst Loss</div>
+              <div className="metric-value neg">{fmtINR(d.summary?.worst_loss?.pnl_inr)}</div>
+              <div className="metric-sub">{d.summary?.worst_loss?.scenario}</div>
+            </div>
+            <div className="metric">
+              <div className="metric-label">Best Gain</div>
+              <div className="metric-value pos">{fmtINR(d.summary?.best_gain?.pnl_inr)}</div>
+              <div className="metric-sub">{d.summary?.best_gain?.scenario}</div>
+            </div>
+            <div className="metric">
+              <div className="metric-label">Risk Level</div>
+              <div className="metric-value" style={{ fontSize: 16, color: riskColor[d.summary?.risk_level] || "var(--text)" }}>{d.summary?.risk_level}</div>
+              <div className="metric-sub">{d.summary?.risk_message}</div>
+            </div>
+          </div>
+
+          {/* Base stats */}
+          <div className="grid-4">
+            <Metric label="Expected Return" value={fmtPct(d.optimal_portfolio?.expected_return)} />
+            <Metric label="Volatility" value={fmtPct(d.optimal_portfolio?.volatility)} />
+            <Metric label="Sharpe" value={fmtMono(d.optimal_portfolio?.sharpe_ratio)} />
+            <Metric label="VaR 95% (₹)" value={fmtINR(d.risk_metrics?.var_parametric_inr)} color="red" />
+          </div>
+          {typeof d.portfolio_beta === "number" && (
+            <p style={{ fontSize: 13, color: "var(--text3)", marginTop: -4 }}>
+              Portfolio market beta: <strong style={{ color: "var(--text)" }}>{d.portfolio_beta.toFixed(2)}</strong>
+              {" "}— each scenario's market shock is propagated to your holdings by their individual betas, so the loss reflects your portfolio's true sensitivity (beta &lt; 1 = defensive, &gt; 1 = aggressive).
+            </p>
+          )}
+
+          {/* Scenario cards */}
+          <div className="grid-2">
+            {(d.scenarios_tested || []).map(s => {
+              const isLoss = s.pnl_inr < 0;
+              const isExpanded = expanded === s.code;
+              return (
+                <div key={s.code} className="card-sm" style={{ cursor: "pointer", borderLeft: `3px solid ${isLoss ? "var(--red)" : "var(--green)"}` }}
+                  onClick={() => setExpanded(isExpanded ? null : s.code)}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                    <div>
+                      <p style={{ fontWeight: 600, fontSize: 13, color: "var(--text)" }}>{s.name}</p>
+                      <span className="badge badge-gray" style={{ marginTop: 3 }}>{s.category}</span>
+                    </div>
+                    <span style={{ fontSize: 11, color: "var(--text3)" }}>{s.likelihood}</span>
+                  </div>
+                  <p style={{ fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 500, color: isLoss ? "var(--red)" : "var(--green)" }}>
+                    {isLoss ? "" : "+"}{fmtINR(s.pnl_inr)}
+                  </p>
+                  <p style={{ fontSize: 12, color: isLoss ? "var(--red)" : "var(--green)" }}>{sign(s.pnl_pct * 100)}{(s.pnl_pct * 100).toFixed(2)}%</p>
+                  <div className="pbar" style={{ marginTop: 8 }}>
+                    <div className="pbar-fill" style={{ width: `${Math.min(Math.abs(s.pnl_pct) * 200, 100)}%`, background: isLoss ? "var(--red)" : "var(--green)" }} />
+                  </div>
+                  <div style={{ marginTop: 6, display: "flex", gap: 6 }}>
+                    <span className={`badge ${s.sharpe_change < 0 ? "badge-red" : "badge-green"}`}>Sharpe {sign(s.sharpe_change)}{s.sharpe_change.toFixed(3)}</span>
+                  </div>
+                  {isExpanded && (
+                    <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--border)", fontSize: 12, color: "var(--text3)" }}>
+                      <p>Base Vol: {fmtPct(s.base_vol)} → Stressed: {fmtPct(s.stressed_vol)}</p>
+                      <p>Base Return: {fmtPct(s.base_return)} → Stressed: {fmtPct(s.stressed_return)}</p>
+                      {s.duration && <p>Duration: {s.duration}</p>}
+                      {s.recovery && <p>Recovery: {s.recovery}</p>}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Risk Contribution */}
+          {d.risk_metrics?.risk_contribution && (
+            <div className="card">
+              <h3 style={{ marginBottom: 14 }}>Risk Contribution by Stock</h3>
+              {Object.entries(d.risk_metrics.risk_contribution).map(([k, v]) => (
+                <div key={k} className="signal-row">
+                  <span className="signal-label mono">{k.replace(".NS", "")}</span>
+                  <div className="signal-bar">
+                    <div className="signal-fill" style={{ width: `${(v * 100).toFixed(1)}%`, background: "var(--accent)" }} />
+                  </div>
+                  <span className="signal-val">{(v * 100).toFixed(1)}%</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// OPTIMISATION (M5)
+function Optimisation() {
+  const [store, setState, setModule, setStatus] = useStore();
+  const [tickers, setTickers] = useState(store.tickers);
+  const [pv, setPv] = useState(store.portfolioValue);
+  const [rf, setRf] = useState(() => +(store.riskFreeRate * 100).toFixed(4));
+  const [maxW, setMaxW] = useState(40);
+  const [weights, setWeights] = useState(() => weightsFromEntries(store.portfolioEntries, store.tickers));
+  const [methods, setMethods] = useState(["hrp", "black_litterman"]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [tab, setTab] = useState("comparison");
+  const [selMethod, setSelMethod] = useState(null);
+  const ms = store.m5;
+  
+  // Sync weights when global store changes
+  useEffect(() => {
+    setWeights(weightsFromEntries(store.portfolioEntries, store.tickers));
+    setTickers(store.tickers);
+    setPv(store.portfolioValue);
+    setRf(+(store.riskFreeRate * 100).toFixed(4));
+  }, [store.portfolioEntries, store.tickers, store.portfolioValue, store.riskFreeRate]);
+
+  const METHOD_OPTIONS = [
+    { key: "hrp", label: "HRP (Hierarchical Risk Parity)" },
+    { key: "black_litterman", label: "Black-Litterman Model" },
+  ];
+
+  async function run() {
+    setLoading(true); setError(null); setStatus("m5", "loading");
+    try {
+      const total = weights.reduce((a, b) => a + b, 0);
+      const res = await apiPost("/api/m5/institutional", {
+        tickers,
+        current_weights: weights.map(w => w / total),
+        portfolio_value: pv,
+        risk_free_rate: rf / 100,
+        max_weight: maxW / 100,
+        methods: methods.length === 0 ? "all" : methods.join(","),
+      });
+      setModule("m5", res);
+      setSelMethod(res.best_method);
+    } catch (e) { setError(e.message); setStatus("m5", "error"); }
+    setLoading(false);
+  }
+
+  const d = ms.result;
+
+  return (
+    <div className="page fade-in">
+      <div className="section-header">
+        <h1 className="section-title">Allocation Strategy Center</h1>
+        <p className="section-sub">Compare strategy options and get clear, practical rebalance guidance.</p>
+        <div className="section-line" />
+      </div>
+
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div className="form-grid" style={{ marginBottom: 16 }}>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <label>Tickers</label>
+            <TickerInput tickers={tickers} onChange={t => { setTickers(t); setWeights(weightsFromEntries(store.portfolioEntries, t)); }} />
+          </div>
+          <div><label>Portfolio Value (₹)</label><input type="number" value={pv} onChange={e => setPv(+e.target.value)} /></div>
+          <div><label>Risk-Free Rate (%)</label><input type="number" value={rf} onChange={e => setRf(+e.target.value)} step="0.5" /></div>
+          <div><label>Max Weight per Stock: {maxW}%</label><input type="range" min="10" max="60" step="5" value={maxW} onChange={e => setMaxW(+e.target.value)} /></div>
+        </div>
+        <div style={{ marginBottom: 14 }}>
+          <label>Current Weights</label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
+            {tickers.map((t, i) => (
+              <div key={t} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span className="mono" style={{ fontSize: 11, color: "var(--text3)", width: 100 }}>{t}</span>
+                <input type="number" value={(weights[i] || 0).toFixed(0)} onChange={e => { const w = [...weights]; w[i] = +e.target.value; setWeights(w); }} style={{ width: 64 }} />
+                <span style={{ fontSize: 11, color: "var(--text3)" }}>%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ marginBottom: 14 }}>
+          <label>Methods</label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
+            {METHOD_OPTIONS.map(m => (
+              <label key={m.key} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, cursor: "pointer", color: "var(--text2)" }}>
+                <input type="checkbox" checked={methods.includes(m.key)} onChange={e => setMethods(e.target.checked ? [...methods, m.key] : methods.filter(x => x !== m.key))} style={{ width: "auto" }} />
+                {m.label}
+              </label>
+            ))}
+          </div>
+        </div>
+        <button className="btn btn-primary btn-full" onClick={run} disabled={loading || tickers.length < 2}>
+          {loading ? "Running…" : "Run Analysis"}
+        </button>
+      </div>
+
+      {loading && <Spinner msg="Running institutional-grade optimisation across methods…" />}
+      {error && <ErrorCard msg={error} onRetry={run} />}
+      {d && !loading && (
+        <div className="fade-in">
+          <Tabs
+            tabs={[{ id: "comparison", label: "Strategy Comparison" }, { id: "frontier", label: "Risk vs Return" }, { id: "weights", label: "Suggested Weights" }, { id: "risk", label: "Risk Split" }]}
+            active={tab} onChange={setTab}
+          />
+          {tab === "comparison" && (
+            <div className="stack">
+              <div className="card" style={{ overflowX: "auto" }}>
+                <table>
+                  <thead>
+                    <tr><th>Strategy</th><th className="td-right">Return</th><th className="td-right">Risk</th><th className="td-right">Sharpe</th><th className="td-right">Deep-Loss</th><th className="td-right">Health</th></tr>
+                  </thead>
+                  <tbody>
+                    {(d.method_comparison || []).map(mc => (
+                      <tr key={mc.method} className={mc.method === d.best_method ? "row-best" : ""}>
+                        <td style={{ fontWeight: mc.method === d.best_method ? 600 : 400 }}>{mc.method.replace(/_/g, " ")} {mc.method === d.best_method && "★"}</td>
+                        <td className="td-right td-mono">{fmtPct(mc.expected_return)}</td>
+                        <td className="td-right td-mono">{fmtPct(mc.volatility)}</td>
+                        <td className="td-right td-mono">{fmtMono(mc.sharpe_ratio)}</td>
+                        <td className="td-right td-mono">{fmtPct(mc.cvar_95)}</td>
+                        <td className="td-right td-mono">{mc.health_score}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="grid-3">
+                <Metric label="Return Δ vs Current" value={(d.improvement_vs_current?.return_delta >= 0 ? "+" : "") + (d.improvement_vs_current?.return_delta * 100 || 0).toFixed(2)} suffix="%" color={d.improvement_vs_current?.return_delta >= 0 ? "green" : "red"} />
+                <Metric label="Volatility Δ" value={(d.improvement_vs_current?.vol_delta >= 0 ? "+" : "") + (d.improvement_vs_current?.vol_delta * 100 || 0).toFixed(2)} suffix="%" color={d.improvement_vs_current?.vol_delta <= 0 ? "green" : "red"} />
+                <Metric label="Sharpe Δ" value={(d.improvement_vs_current?.sharpe_delta >= 0 ? "+" : "") + fmtMono(d.improvement_vs_current?.sharpe_delta)} color={d.improvement_vs_current?.sharpe_delta >= 0 ? "green" : "red"} />
+              </div>
+              <div className="card-sm">
+                <span style={{ fontSize: 12, color: "var(--text3)" }}>Stability factor = </span>
+                <span className="mono" style={{ fontSize: 13, color: "var(--accent)" }}>{fmtMono(d.ledoit_wolf_delta, 4)}</span>
+                <p style={{ fontSize: 12, color: "var(--text3)", marginTop: 4 }}>
+                  Closer to 0 means raw data, closer to 1 means stronger smoothing. Your current value uses {d.ledoit_wolf_delta < 0.3 ? "light" : d.ledoit_wolf_delta < 0.6 ? "medium" : "strong"} smoothing.
+                </p>
+              </div>
+            </div>
+          )}
+          {tab === "frontier" && (
+            <div className="card">
+              <FrontierChart
+                frontier={d.efficient_frontier}
+                specialPoints={Object.entries(d.methods || {}).map(([m, r], i) => ({ x: r.volatility * 100, y: r.expected_return * 100, label: m.replace(/_/g, " "), fill: m === d.best_method ? "var(--green)" : "var(--accent)" }))}
+              />
+            </div>
+          )}
+          {tab === "weights" && (
+            <div className="stack">
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {Object.keys(d.methods || {}).map(m => (
+                  <button key={m} className={`btn btn-sm ${selMethod === m ? "btn-primary" : "btn-outline"}`} onClick={() => setSelMethod(m)}>{m.replace(/_/g, " ")}</button>
+                ))}
+              </div>
+              {selMethod && d.methods?.[selMethod] && (
+                <div className="card"><WeightDonut weights={d.methods[selMethod].weights} title={selMethod.replace(/_/g, " ")} /></div>
+              )}
+              <div className="card" style={{ overflowX: "auto" }}>
+                <h3 style={{ marginBottom: 14 }}>Buy and Sell Actions</h3>
+                <table>
+                  <thead><tr><th>Ticker</th><th className="td-right">Current</th><th className="td-right">Target</th><th className="td-right">Action</th><th className="td-right">₹ Delta</th></tr></thead>
+                  <tbody>
+                    {(d.rebalance_actions || []).map(ra => (
+                      <tr key={ra.ticker} style={{ background: ra.action === "BUY" ? "var(--success-bg-light)" : ra.action === "SELL" ? "var(--danger-bg-light)" : "" }}>
+                        <td className="td-mono">{ra.ticker}</td>
+                        <td className="td-right td-mono">{(ra.current_pct * 100).toFixed(1)}%</td>
+                        <td className="td-right td-mono">{(ra.target_pct * 100).toFixed(1)}%</td>
+                        <td className="td-right"><span className={`badge ${ra.action === "BUY" ? "badge-green" : ra.action === "SELL" ? "badge-red" : "badge-gray"}`}>{ra.action}</span></td>
+                        <td className="td-right td-mono">{fmtINR(ra.rupees_delta)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+          {tab === "risk" && (
+            <div className="stack">
+              <div className="grid-3">
+                <Metric label="Diversification Ratio" value={fmtMono(d.risk_attribution?.diversification_ratio)} />
+                <Metric label="Effective Positions" value={`${fmtMono(d.risk_attribution?.effective_n, 1)} / ${tickers.length}`} />
+                <Metric label="HHI Concentration" value={fmtMono(d.risk_attribution?.hhi || 0, 4)} />
+              </div>
+              <div className="card">
+                <h3 style={{ marginBottom: 14 }}>Risk Contribution</h3>
+                {Object.entries(d.risk_attribution?.risk_contribution || {}).map(([k, v]) => (
+                  <div key={k} className="signal-row">
+                    <span className="signal-label mono">{k.replace(".NS", "")}</span>
+                    <div className="signal-bar">
+                      <div className="signal-fill" style={{ width: `${(v * 100).toFixed(1)}%`, background: "var(--accent)" }} />
+                    </div>
+                    <span className="signal-val">{(v * 100).toFixed(1)}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="card" style={{ marginTop: 20, background: "var(--bg3)" }}>
+            <h4 style={{ marginBottom: 10 }}>Glossary of Strategy Terms</h4>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 20px", fontSize: 13 }}>
+              <div><strong>Mean-Variance:</strong> Traditional approach balancing return vs risk (volatility).</div>
+              <div><strong>Min-Variance:</strong> Focuses purely on minimising risk, regardless of returns.</div>
+              <div><strong>CVaR (95% Conf):</strong> 'Conditional Value at Risk'. The average loss in the worst-case 5% of scenarios.</div>
+              <div><strong>Risk Parity:</strong> Allocates weights so each stock contributes equally to total risk.</div>
+              <div><strong>Max Diversification:</strong> Aims to create the most 'un-correlated' portfolio possible.</div>
+              <div><strong>Health Score:</strong> A proprietary rating of how robust and diversified the strategy is.</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// REGIME (M7)
+function Regime() {
+  const [store, setState, setModule, setStatus] = useStore();
+  const [tickers, setTickers] = useState(store.tickers);
+  const [rf, setRf] = useState(() => +(store.riskFreeRate * 100).toFixed(4));
+  const [h1, setH1] = useState(21);
+  const [h2, setH2] = useState(63);
+  const [appetite, setAppetite] = useState("balanced");
+  const [showAdv, setShowAdv] = useState(false);
+  const [restarts, setRestarts] = useState(3);
+  const [maxIter, setMaxIter] = useState(150);
+  const [garchBoot, setGarchBoot] = useState(300);
+  const [uncBoot, setUncBoot] = useState(200);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [tab, setTab] = useState("status");
+  const ms = store.m7;
+
+  useEffect(() => {
+    setTickers(store.tickers);
+    setRf(+(store.riskFreeRate * 100).toFixed(4));
+  }, [store.tickers, store.riskFreeRate]);
+
+  async function run() {
+    setLoading(true); setError(null); setStatus("m7", "loading");
+    try {
+      const res = await apiPost("/api/m7/regime", {
+        tickers, risk_free_rate: rf / 100, horizons: [h1, h2], risk_appetite: appetite,
+        hmm_restarts: restarts, hmm_max_iter: maxIter, garch_n_sim: garchBoot, uncertainty_n_boot: uncBoot,
+      });
+      setModule("m7", res);
+    } catch (e) { setError(e.message); setStatus("m7", "error"); }
+    setLoading(false);
+  }
+
+  const REGIME_DESC = {
+    "Low-Vol Bull": "The market is calm and trending upward. Conditions favour equity exposure.",
+    "High-Vol Bear": "The market is falling with elevated volatility. Defensive positioning recommended.",
+    "Crisis": "Severe stress detected. Capital preservation is the primary objective.",
+    "Transitional": "Mixed signals. The market is between phases — balanced caution advised.",
+  };
+
+  const d = ms.result;
+
+  return (
+    <div className="page fade-in">
+      <div className="section-header">
+        <h1 className="section-title">Market Regime Outlook</h1>
+        <p className="section-sub">Understand the current market environment and short-term risk in plain English.</p>
+        <div className="section-line" />
+      </div>
+
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div className="form-grid" style={{ marginBottom: 14 }}>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <label>Tickers</label>
+            <TickerInput tickers={tickers} onChange={setTickers} />
+          </div>
+          <div><label>Risk-Free Rate (%)</label><input type="number" value={rf} onChange={e => setRf(+e.target.value)} step="0.5" /></div>
+          <div><label>Horizon 1 (days)</label><input type="number" value={h1} onChange={e => setH1(+e.target.value)} /></div>
+          <div><label>Horizon 2 (days)</label><input type="number" value={h2} onChange={e => setH2(+e.target.value)} /></div>
+        </div>
+        <div style={{ marginBottom: 14 }}>
+          <label>Risk Appetite</label>
+          <div className="toggle-group" style={{ marginTop: 6 }}>
+            {["conservative", "balanced", "aggressive"].map(a => (
+              <button key={a} className={`toggle-btn${appetite === a ? " active" : ""}`} onClick={() => setAppetite(a)} style={{ textTransform: "capitalize" }}>{a}</button>
+            ))}
+          </div>
+        </div>
+        <button className="btn btn-sm btn-outline" style={{ marginBottom: 14 }} onClick={() => setShowAdv(!showAdv)}>
+          {showAdv ? "▲" : "▼"} Advanced Settings
+        </button>
+        {showAdv && (
+          <div className="form-grid" style={{ marginBottom: 14 }}>
+            <div><label>HMM Restarts</label><input type="number" value={restarts} onChange={e => setRestarts(+e.target.value)} min={1} max={10} /></div>
+            <div><label>Max Iterations</label><input type="number" value={maxIter} onChange={e => setMaxIter(+e.target.value)} min={50} max={1000} /></div>
+            <div><label>Volatility Samples</label><input type="number" value={garchBoot} onChange={e => setGarchBoot(+e.target.value)} min={50} max={2000} /></div>
+            <div><label>Uncertainty Bootstrap</label><input type="number" value={uncBoot} onChange={e => setUncBoot(+e.target.value)} min={50} max={2000} /></div>
+          </div>
+        )}
+        <button className="btn btn-primary btn-full" onClick={run} disabled={loading || tickers.length < 2}>
+          {loading ? "Analysing…" : "Run Analysis"}
+        </button>
+        <p style={{ fontSize: 12, color: "var(--amber)", marginTop: 8 }}>⚠ This analysis takes 15–30 seconds.</p>
+      </div>
+
+      {loading && <Spinner msg="Fitting Hidden Markov Model to live price data — please wait…" />}
+      {error && <ErrorCard msg={error} onRetry={run} />}
+      {d && !loading && (
+        <div className="fade-in">
+          <Tabs
+            tabs={[
+              { id: "status", label: "Market State" }, { id: "transition", label: "State Changes" },
+              { id: "garch", label: "Volatility Outlook" }, { id: "forward", label: "Return Outlook" },
+              { id: "params", label: "Strategy Tuning" }, { id: "weights", label: "Weights & Confidence" },
+            ]}
+            active={tab} onChange={setTab}
+          />
+
+          {tab === "status" && (
+            <div className="card" style={{ textAlign: "center" }}>
+              <div style={{ marginBottom: 20 }}>
+                <span className={`regime-badge ${regimeBadgeClass(d.current_regime)}`} style={{ fontSize: 20, padding: "10px 24px" }}>
+                  {regimeIcon(d.current_regime)} {d.current_regime}
+                </span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 12, marginBottom: 20, textAlign: "left" }}>
+                {Object.entries(d.regime_probabilities || {}).map(([r, p]) => (
+                  <div key={r} className="regime-row" style={{ border: "none", padding: "8px 0" }}>
+                    <div style={{ width: 8, height: 8, borderRadius: 2, background: regimeColor(r), flexShrink: 0 }} />
+                    <span className="regime-name">{r}</span>
+                    <div className="regime-pbar">
+                      <div className="pbar"><div className="pbar-fill" style={{ width: `${(p * 100).toFixed(1)}%`, background: regimeColor(r) }} /></div>
+                    </div>
+                    <span className="regime-pct">{(p * 100).toFixed(1)}%</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
+                <span className="badge badge-gray">Confidence: {fmtMono(d.log_likelihood, 1)}</span>
+                <span className="badge badge-gray">{d.log_likelihood > 5000 ? "Highly Reliable Fit" : d.log_likelihood > 3000 ? "Reliable Fit" : "Historical Model Fit"}</span>
+                <span className="badge badge-gray">Data Quality (ESS): {d.uncertainty?.effective_sample_size}</span>
+              </div>
+              <p style={{ fontSize: 13, color: "var(--text2)", maxWidth: 500, margin: "0 auto", lineHeight: 1.6 }}>
+                {REGIME_DESC[d.current_regime] || REGIME_DESC["Transitional"]}
+              </p>
+            </div>
+          )}
+
+          {tab === "transition" && (
+            <div className="stack">
+              <div className="card" style={{ overflowX: "auto" }}>
+              <h3 style={{ marginBottom: 14 }}>Chance of Moving to Another Market State</h3>
+                <table>
+                  <thead>
+                    <tr>
+                      <th></th>
+                      {Object.keys(d.transition_matrix || {}).map(r => <th key={r} className="tm-head">{r}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(d.transition_matrix || {}).map(([from, row]) => (
+                      <tr key={from}>
+                        <td style={{ fontSize: 11, color: "var(--text3)", whiteSpace: "nowrap", paddingRight: 8 }}>{from}</td>
+                        {Object.entries(row).map(([to, val]) => (
+                          <td key={to} className="tm-cell" style={{
+                            background: from === to ? "var(--corr-diag)" : `var(--corr-neg-half)`,
+                          }} title={`${from} → ${to}: ${(val * 100).toFixed(2)}%`}>
+                            {(val * 100).toFixed(1)}%
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 12 }}>
+                {Object.entries(d.expected_regime_duration_days || {}).map(([r, days]) => (
+                  <div key={r} className="metric" style={{ textAlign: "center" }}>
+                    <div className="metric-label">{r}</div>
+                    <div className="metric-value">{Math.round(days)} days</div>
+                    <div className="metric-sub">({(days / 21).toFixed(1)} months)</div>
+                  </div>
+                ))}
+              </div>
+              <div className="card">
+                <h3 style={{ marginBottom: 14 }}>Crisis Risk by Time Horizon</h3>
+                {Object.entries(d.crisis_probability_by_horizon || {}).map(([h, p]) => (
+                  <div key={h} className="signal-row">
+                    <span className="signal-label">{h}d horizon</span>
+                    <div className="signal-bar">
+                      <div className="signal-fill" style={{ width: `${(p * 100).toFixed(1)}%`, background: "var(--red)" }} />
+                    </div>
+                    <span className="signal-val">{(p * 100).toFixed(1)}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {tab === "garch" && (
+            <div className="card">
+              <h3 style={{ marginBottom: 14 }}>Volatility Forecast (30 Days)</h3>
+              <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+                <span className="badge badge-blue">Current Vol: {fmtPct(d.garch_current_vol)}</span>
+                <span className="badge badge-blue">30d Forecast: {fmtPct(d.garch_30d_forecast)}</span>
+              </div>
+              {/* Simple SVG line chart */}
+              {(() => {
+                const pts = Object.entries(d.garch_forecast_path || {}).slice(0, 30);
+                if (pts.length === 0) return <p style={{ color: "var(--text3)" }}>No forecast data.</p>;
+                const W = 480, H = 200, PAD = { t: 20, r: 20, b: 30, l: 50 };
+                const vals = pts.map(([, v]) => v.vol_ann * 100);
+                const uppers = pts.map(([, v]) => v.ci_upper_95 * 100);
+                const lowers = pts.map(([, v]) => v.ci_lower_95 * 100);
+                const yMin = Math.min(...lowers) * 0.9, yMax = Math.max(...uppers) * 1.1;
+                const cW = W - PAD.l - PAD.r, cH = H - PAD.t - PAD.b;
+                const px = i => PAD.l + (i / (pts.length - 1)) * cW;
+                const py = v => PAD.t + (1 - (v - yMin) / (yMax - yMin)) * cH;
+                const linePath = pts.map(([, v], i) => `${i === 0 ? "M" : "L"}${px(i).toFixed(1)},${py(v.vol_ann * 100).toFixed(1)}`).join(" ");
+                const areaPath = [
+                  ...pts.map(([, v], i) => `${i === 0 ? "M" : "L"}${px(i).toFixed(1)},${py(v.ci_upper_95 * 100).toFixed(1)}`),
+                  ...pts.map(([, v], i) => `L${px(pts.length - 1 - i).toFixed(1)},${py(pts[pts.length - 1 - i][1].ci_lower_95 * 100).toFixed(1)}`),
+                  "Z",
+                ].join(" ");
+                return (
+                  <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", maxHeight: 200 }}>
+                    <path d={areaPath} fill="var(--accent-bg-light)" />
+                    <path d={linePath} fill="none" stroke="var(--accent)" strokeWidth={2} />
+                    <text x={PAD.l - 4} y={PAD.t + 4} textAnchor="end" fontSize={10} fill="var(--text3)">{yMax.toFixed(1)}%</text>
+                    <text x={PAD.l - 4} y={H - PAD.b} textAnchor="end" fontSize={10} fill="var(--text3)">{yMin.toFixed(1)}%</text>
+                    <text x={PAD.l} y={H - 6} textAnchor="start" fontSize={10} fill="var(--text3)">Day 1</text>
+                    <text x={W - PAD.r} y={H - 6} textAnchor="end" fontSize={10} fill="var(--text3)">Day {pts.length}</text>
+                    <text x={W / 2} y={H} textAnchor="middle" fontSize={10} fill="var(--text3)">Annualised Volatility (%)</text>
+                  </svg>
+                );
+              })()}
+              <p style={{ fontSize: 13, color: "var(--text2)", marginTop: 12 }}>
+                Volatility is expected to <strong style={{ color: "var(--text)" }}>{d.garch_30d_forecast > d.garch_current_vol ? "rise" : "fall"}</strong> from {fmtPct(d.garch_current_vol)} to {fmtPct(d.garch_30d_forecast)} over 30 days.
+                The shaded band shows the 95% confidence interval.
+              </p>
+            </div>
+          )}
+
+          {tab === "forward" && (
+            <div className="grid-2">
+              {Object.entries(d.forward_distributions || {}).map(([h, fd]) => (
+                <div key={h} className="card">
+                  <h3 style={{ marginBottom: 10 }}>Time Window: {h} days</h3>
+                  <p className={`metric-value ${fd.expected_return_ann >= 0 ? "pos" : "neg"}`} style={{ marginBottom: 12 }}>
+                    {fmtPct(fd.expected_return_ann)}
+                  </p>
+                  <div className="stack-sm" style={{ fontSize: 13 }}>
+                    {[["Annualised Vol", fmtPct(fd.annualised_vol)], ["Market Skew", fmtMono(fd.skewness)],
+                      ["Tail Risk Shape", fmtMono(fd.excess_kurtosis)], ["VaR (95% Conf)", fmtPct(fd.var_95_pct)],
+                      ["Deep Loss (95% Conf)", fmtPct(fd.cvar_95_pct)], ["Chance of >10% Loss", fmtPct(fd.prob_loss_over_10pct)]].map(([l, v]) => (
+                      <div key={l} style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "var(--text3)" }}>{l}</span>
+                        <span className="mono" style={{ color: l.includes("VaR") || l.includes("Conf") ? "var(--red)" : "var(--text)" }}>{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: 10 }}>
+                    <span className={`badge ${fd.skewness < -0.5 ? "badge-red" : fd.skewness > 0.5 ? "badge-green" : "badge-gray"}`}>
+                      {fd.skewness < -0.5 ? "Left-skewed" : fd.skewness > 0.5 ? "Right-skewed" : "Symmetric"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {tab === "params" && (
+            <div className="card">
+              <h3 style={{ marginBottom: 16 }}>Auto-Tuned Strategy Settings</h3>
+              {[
+                { l: "Return Chasing", v: d.adaptive_parameters?.lam_return, base: 1.0 },
+                { l: "Risk Penalisation", v: d.adaptive_parameters?.lam_vol, base: 1.0 },
+                { l: "Tail-Risk Limit", v: d.adaptive_parameters?.lam_cvar, base: 1.0 },
+                { l: "Max Stock Weight", v: d.adaptive_parameters?.max_weight, base: 0.4 },
+                { l: "Target Volatility", v: d.adaptive_parameters?.target_vol_ann, base: 0.15 },
+                { l: "Position Scaling", v: d.adaptive_parameters?.position_scale, base: 1.0 },
+              ].map(p => (
+                <div key={p.l} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+                  <span style={{ fontSize: 12, color: "var(--text3)", width: 110, flexShrink: 0 }}>{p.l}</span>
+                  <div style={{ flex: 1, height: 6, background: "var(--bg4)", borderRadius: 3, position: "relative" }}>
+                    <div style={{ position: "absolute", left: "50%", top: 0, width: 1, height: "100%", background: "var(--border2)" }} />
+                    <div style={{ height: "100%", borderRadius: 3, width: `${clamp((p.v / (p.base * 2)) * 100, 0, 100)}%`, background: p.v > p.base ? "var(--green)" : p.v < p.base * 0.7 ? "var(--red)" : "var(--accent)" }} />
+                  </div>
+                  <span className="mono" style={{ fontSize: 12, width: 50, textAlign: "right" }}>{fmtMono(p.v)}</span>
+                </div>
+              ))}
+              <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+                <span className="badge badge-gray">Strategy: {d.adaptive_parameters?.optimization_method}</span>
+                <span className="badge badge-gray">Entropy: {fmtMono(d.adaptive_parameters?.regime_entropy)}</span>
+              </div>
+              {(d.parameter_notes || []).map((note, i) => (
+                <div key={i} className="card-sm" style={{ marginTop: 10, borderLeft: "3px solid var(--amber)" }}>
+                  <p style={{ fontSize: 12, color: "var(--amber)" }}>{note}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {tab === "weights" && (
+            <div className="stack">
+              <div className="grid-2">
+                <div className="card"><WeightDonut weights={d.optimal_weights || {}} title="Regime-Optimal Allocation" /></div>
+                <div className="grid-2">
+                  <Metric label="Expected Return" value={fmtPct(d.portfolio_stats?.expected_return)} />
+                  <Metric label="Volatility" value={fmtPct(d.portfolio_stats?.volatility)} />
+                  <Metric label="Sharpe Ratio" value={fmtMono(d.portfolio_stats?.sharpe_ratio)} />
+                  <Metric label="Tail-Risk 95%" value={fmtPct(d.portfolio_stats?.cvar_95)} color="red" />
+                </div>
+              </div>
+              <div className="card" style={{ overflowX: "auto" }}>
+                <h3 style={{ marginBottom: 14 }}>Regime Probability Confidence Intervals</h3>
+                <table>
+                  <thead><tr><th>Regime</th><th className="td-right">Probability</th><th className="td-right">Lower 95%</th><th className="td-right">Upper 95%</th><th className="td-right">Certainty</th></tr></thead>
+                  <tbody>
+                    {Object.entries(d.uncertainty?.regime_ci || {}).map(([r, ci]) => (
+                      <tr key={r}>
+                        <td>{r}</td>
+                        <td className="td-right td-mono">{(ci.mean * 100).toFixed(1)}%</td>
+                        <td className="td-right td-mono">{(ci.lower_95 * 100).toFixed(1)}%</td>
+                        <td className="td-right td-mono">{(ci.upper_95 * 100).toFixed(1)}%</td>
+                        <td className="td-right">
+                          <span className={`badge ${ci.half_width < 0.05 ? "badge-green" : ci.half_width < 0.15 ? "badge-amber" : "badge-red"}`}>
+                            {ci.half_width < 0.05 ? "Very certain" : ci.half_width < 0.15 ? "Fairly certain" : "Uncertain"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="card">
+                <h3 style={{ marginBottom: 14 }}>Weight Sensitivity to Regime Shifts</h3>
+                {Object.entries(d.uncertainty?.weight_sensitivity || {}).sort((a, b) => b[1] - a[1]).map(([t, v]) => (
+                  <div key={t} className="signal-row">
+                    <span className="signal-label mono">{t.replace(".NS", "")}</span>
+                    <div className="signal-bar">
+                      <div className="signal-fill" style={{ width: `${clamp(v * 1000, 0, 100)}%`, background: "var(--accent)" }} />
+                    </div>
+                    <span className="signal-val">{fmtMono(v, 4)}</span>
+                  </div>
+                ))}
+                <p style={{ fontSize: 12, color: "var(--text3)", marginTop: 10 }}>
+                  Estimated market reset time: ~{Math.round(d.mixing_time_days || 0)} days ({((d.mixing_time_days || 0) / 252).toFixed(1)} years).
+                </p>
+              </div>
+              <div className="card" style={{ marginTop: 20, background: "var(--bg3)" }}>
+                <h4 style={{ marginBottom: 10 }}>Market Regime Concepts</h4>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 20px", fontSize: 13 }}>
+                  <div><strong>ESS (Data Quality):</strong> 'Effective Sample Size'. Higher means the model has more useful historical data for this state.</div>
+                  <div><strong>Mixing Time (Reset):</strong> The estimated number of days until the current regime signal naturally fades away.</div>
+                  <div><strong>VaR (95% Confidence):</strong> 'Value at Risk'. The threshold where there is only a 5% chance of a worse loss.</div>
+                  <div><strong>Deep Loss (CVaR):</strong> The average size of losses expected in extreme scenarios.</div>
+                  <div><strong>HMM Fit:</strong> Indicates how well the regime model matches patterns in live price data.</div>
+                  <div><strong>Weight Sensitivity:</strong> How much our weights would change if the market state shifted slightly.</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// SETTINGS
+function Settings() {
+  const [store, setState] = useStore();
+  const [url, setUrl] = useState(BASE);
+  const [online, setOnline] = useState(null);
+
+  async function ping() {
+    try {
+      await apiGet("/api/health");
+      setOnline(true);
+    } catch { setOnline(false); }
+  }
+
+  useEffect(() => { ping(); }, []);
+
+  function importPortfolioCsv(parsed) {
+    const importedValue = parsed.entries.reduce((sum, entry) => {
+      const shares = Number.isFinite(entry.shares) ? entry.shares : 0;
+      const price = Number.isFinite(entry.price) ? entry.price : 0;
+      return sum + shares * price;
+    }, 0);
+    setState({
+      tickers: parsed.tickers,
+      portfolioEntries: parsed.entries,
+      portfolioValue: importedValue > 0 ? Math.round(importedValue) : store.portfolioValue,
+    });
+  }
+
+  return (
+    <div className="page fade-in">
+      <div className="section-header">
+        <h1 className="section-title">Workspace Settings</h1>
+        <p className="section-sub">Manage your data, defaults, and connection settings.</p>
+        <div className="section-line" />
+      </div>
+      <div className="stack">
+        <div className="card">
+          <h3 style={{ marginBottom: 14 }}>Portfolio Import</h3>
+          <PortfolioCsvImport onImport={importPortfolioCsv} />
+        </div>
+        <div className="card">
+          <h3 style={{ marginBottom: 14 }}>Backend Connection</h3>
+          <div style={{ marginBottom: 12 }}>
+            <label>API Base URL</label>
+            <input value={url} onChange={e => setUrl(e.target.value)} />
+            <p style={{ fontSize: 11, color: "var(--text3)", marginTop: 4 }}>Uses same-origin API by default. Set <span className="mono">window.__VITE_API_BASE_URL</span> only if your API runs on another URL.</p>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button className="btn btn-sm btn-outline" onClick={ping}>Test Connection</button>
+            {online !== null && (
+              <span className={`badge ${online ? "badge-green" : "badge-red"}`}>{online ? "● Backend online" : "● Backend offline"}</span>
+            )}
+          </div>
+        </div>
+        <div className="card">
+          <h3 style={{ marginBottom: 14 }}>Default Portfolio</h3>
+          <div className="form-grid">
+            <div>
+              <label>Risk-Free Rate (%)</label>
+              <input type="number" value={+(store.riskFreeRate * 100).toFixed(4)} onChange={e => setState({ riskFreeRate: +e.target.value / 100 })} step="0.5" />
+            </div>
+            <div>
+              <label>Portfolio Value (₹)</label>
+              <input type="number" value={store.portfolioValue} onChange={e => setState({ portfolioValue: +e.target.value })} />
+            </div>
+          </div>
+        </div>
+        <div className="card">
+          <h3 style={{ marginBottom: 14 }}>Data</h3>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button className="btn btn-sm btn-outline" onClick={() => setState({
+              m3: { result: null, status: "idle" }, m4: { result: null, status: "idle" },
+              m5: { result: null, status: "idle" },
+              m7: { result: null, status: "idle" },
+            })}>Clear All Results</button>
+            <button className="btn btn-sm btn-outline" onClick={() => { setState({ tickers: DEFAULT_PORTFOLIO_ENTRIES.map(entry => entry.ticker), portfolioEntries: DEFAULT_PORTFOLIO_ENTRIES, riskFreeRate: 0.07, portfolioValue: 1000000 }); }}>Reset Defaults</button>
+          </div>
+        </div>
+        <div className="card">
+          <h3 style={{ marginBottom: 10 }}>About ClearView Analytics</h3>
+          <div style={{ fontSize: 13, color: "var(--text3)", lineHeight: 1.7 }}>
+            <p>ClearView Analytics focuses on portfolio modeling, stress analytics, allocation analytics, and market regime analytics.</p>
+            <p style={{ marginTop: 6 }}>This platform provides analytics, not financial advice. Decision responsibility always remains with the user.</p>
+            <p style={{ marginTop: 6 }}>Backend: FastAPI + Python. Frontend: React.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── App Shell ────────────────────────────────────────────────────────────────
+function App() {
+  const [authUser, setAuthUser] = useState(() => {
+    try {
+      const raw = window.localStorage.getItem(AUTH_PROFILE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [authBooting, setAuthBooting] = useState(true);
+  const [authError, setAuthError] = useState("");
+  const [page, setPage] = useState("dashboard");
+  const [store] = useStore();
+
+  const refreshAuthFromApi = useCallback(async () => {
+    try {
+      const data = await apiGet("/api/auth/me");
+      if (data?.user?.username) {
+        window.localStorage.setItem(AUTH_PROFILE_KEY, JSON.stringify(data.user));
+        setAuthUser(data.user);
+        setAuthError("");
+        return true;
+      }
+    } catch (err) {
+      setAuthError(err?.message || "Authentication failed.");
+    }
+    window.localStorage.removeItem(AUTH_PROFILE_KEY);
+    setAuthUser(null);
+    return false;
+  }, []);
+
+  useEffect(() => {
+    function clearAuth() {
+      window.localStorage.removeItem(AUTH_TOKEN_KEY);
+      window.localStorage.removeItem(AUTH_PROFILE_KEY);
+      setAuthUser(null);
+    }
+
+    window.addEventListener("clearview-auth-expired", clearAuth);
+    const token = window.localStorage.getItem(AUTH_TOKEN_KEY);
+    if (!token) {
+      setAuthBooting(false);
+      return () => window.removeEventListener("clearview-auth-expired", clearAuth);
+    }
+    refreshAuthFromApi().finally(() => setAuthBooting(false));
+
+    return () => {
+      window.removeEventListener("clearview-auth-expired", clearAuth);
+    };
+  }, [refreshAuthFromApi]);
+
+  function handleAuthReady(authPayload) {
+    const token = authPayload?.token || "";
+    const user = authPayload?.user || null;
+    if (!token || !user) {
+      setAuthError("Authentication response was invalid.");
+      return;
+    }
+    window.localStorage.setItem(AUTH_TOKEN_KEY, token);
+    window.localStorage.setItem(AUTH_PROFILE_KEY, JSON.stringify(user));
+    setAuthUser(user);
+    setAuthError("");
+  }
+
+  function handleLogout() {
+    window.localStorage.removeItem(AUTH_TOKEN_KEY);
+    window.localStorage.removeItem(AUTH_PROFILE_KEY);
+    setAuthUser(null);
+    setPage("dashboard");
+  }
+
+  if (authBooting) {
+    return (
+      <div className="auth-shell">
+        <div className="auth-panel">
+          <p className="auth-sub">Checking your session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!authUser) {
+    return <LoginGate onAuthenticated={handleAuthReady} authError={authError} />;
+  }
+
+  const NAV = [
+    { id: "dashboard", label: "Executive Dashboard", icon: "⌂", module: null },
+    { id: "portfolio", label: "Performance & Risk", icon: "◎", module: "m3" },
+    { id: "stress", label: "Stress Scenarios", icon: "⚡", module: "m4" },
+    { id: "optimisation", label: "Allocation Strategy", icon: "⬡", module: "m5" },
+    { id: "regime", label: "Regime Outlook", icon: "◉", module: "m7" },
+    { id: "settings", label: "Settings", icon: "⚙", module: null },
+  ];
+
+  const PAGES = { dashboard: Dashboard, portfolio: Portfolio, stress: StressTest, optimisation: Optimisation, regime: Regime, settings: Settings };
+  const PageComponent = PAGES[page] || Dashboard;
+
+  const titles = {
+    dashboard: "Executive Dashboard",
+    portfolio: "Portfolio Performance & Risk",
+    stress: "Stress Test Scenarios",
+    optimisation: "Allocation Strategy Center",
+    regime: "Market Regime Outlook",
+    settings: "Workspace Settings",
+  };
+
+  return (
+    <div className="shell">
+      <aside className="sidebar">
+        <div className="sidebar-logo">
+          <div className="logo-mark">CV</div>
+          <div className="logo-text">ClearView Analytics</div>
+        </div>
+        <div className="nav-section">Modules</div>
+        {NAV.map(n => {
+          const status = n.module ? store[n.module]?.status : null;
+          return (
+            <div key={n.id} className={`nav-item${page === n.id ? " active" : ""}`} onClick={() => setPage(n.id)}>
+              <span className="nav-icon">{n.icon}</span>
+              <span style={{ flex: 1 }}>{n.label}</span>
+              {status && <div className={`nav-dot ${status}`} />}
+            </div>
+          );
+        })}
+        <div style={{ flex: 1 }} />
+        <div style={{ padding: "16px 20px", borderTop: "1px solid var(--border)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            <div className={`nav-dot ${store.backendOnline ? "success" : "error"}`} />
+            <span style={{ fontSize: 11, color: "var(--text3)" }}>{store.backendOnline ? "Backend online" : "Backend offline"}</span>
+          </div>
+        </div>
+      </aside>
+      <div className="main">
+        {!store.backendOnline && (
+          <div className="offline-banner">
+            Backend is not reachable right now. Check your backend URL in Settings.
+          </div>
+        )}
+        <header className="topbar">
+          <span className="topbar-title">{titles[page]}</span>
+          <div className="topbar-tickers">
+            {store.tickers.map(t => <span key={t} className="ticker-pill">{t}</span>)}
+          </div>
+          <span className="badge badge-gray" style={{ marginRight: 8 }}>
+            {(authUser?.username || authUser?.name || authUser?.email || "").trim()}
+          </span>
+          <button className="btn btn-sm btn-outline" onClick={handleLogout}>Sign Out</button>
+          <div className="backend-badge">
+            <div className={`backend-dot${store.backendOnline ? "" : " offline"}`} />
+            <span>{store.backendOnline ? "Connected" : "Offline"}</span>
+          </div>
+        </header>
+        <PageComponent setPage={setPage} />
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+<script>
+// Transform the app source with the CLASSIC JSX runtime and execute it.
+// React/ReactDOM are loaded as UMD globals above, so JSX must compile to
+// React.createElement (classic) rather than the automatic runtime's
+// require("react/jsx-runtime"), which has no module loader in the browser.
+(function () {
+  var src = document.getElementById("cv-app-src").textContent;
+  var compiled = Babel.transform(src, { presets: [["react", { runtime: "classic" }]] }).code;
+  (0, eval)(compiled);
+})();
+</script>
+</body>
+</html>

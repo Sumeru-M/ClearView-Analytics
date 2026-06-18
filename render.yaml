@@ -1,0 +1,45 @@
+services:
+  - type: web
+    name: clearview-analytics
+    env: python
+    plan: standard
+    pythonVersion: 3.11
+    
+    # Build configuration
+    buildCommand: pip install -r requirements.txt
+    startCommand: "gunicorn --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 src.main:app"
+    
+    # Persistent disk so the SQLite auth DB survives deploys/restarts.
+    # Without this, Render's filesystem is ephemeral and every restart
+    # wipes registered accounts (forcing users to sign up again).
+    disk:
+      name: clearview-data
+      mountPath: /var/data
+      sizeGB: 1
+
+    # Environment variables (set these in Render dashboard)
+    envVars:
+      - key: AUTH_SECRET
+        scope: runtime
+      - key: CORS_ORIGINS
+        value: "*"
+        scope: runtime
+      # Store the SQLite auth DB on the persistent disk mounted above.
+      - key: AUTH_DB_PATH
+        value: "/var/data/clearview_auth.db"
+        scope: runtime
+      # Optional: set both to use Supabase instead of the on-disk SQLite
+      # (required for serverless hosts like Vercel where no disk exists).
+      - key: SUPABASE_URL
+        scope: runtime
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        scope: runtime
+      - key: PYTHON_VERSION
+        value: "3.11"
+        scope: runtime
+
+    # Auto-deploy on push
+    autoDeploy: true
+
+    # Health check
+    healthCheckPath: /api/health/ready
