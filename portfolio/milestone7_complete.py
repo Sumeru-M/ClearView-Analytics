@@ -70,11 +70,13 @@ K_STATES = 4          # number of latent regimes
 M_OBS    = 4          # observation feature dimension
 LOG_EPS  = -1e300     # log(0) sentinel (safer than -inf for addition)
 
+# Labels are ordered by increasing severity to match the ascending crisis-score
+# ordering enforced in _reorder_states (index 0 = calmest, index 3 = worst).
 STATE_LABELS = {
     0: "Low-Vol Bull",
-    1: "High-Vol Bear",
-    2: "Crisis",
-    3: "Transitional",
+    1: "Transitional",
+    2: "High-Vol Bear",
+    3: "Crisis",
 }
 
 
@@ -539,12 +541,14 @@ def _reorder_states(params: HMMParameters) -> HMMParameters:
     """
     Re-order states to enforce identifiability based on regime characteristics.
     
-    The 4 regimes should be ordered by increasing "crisis-ness":
-        state 0 = Low-Vol Bull (low vol, positive return, minimal drawdown)
-        state 1 = High-Vol Bear (high vol, negative return, significant drawdown)
-        state 2 = Crisis (very high vol, very negative return, severe drawdown)
-        state 3 = Transitional (intermediate characteristics)
-    
+    The 4 regimes are ordered by INCREASING "crisis-ness" so that the index is
+    monotonic in severity (this is what the labels, parameter grids and the
+    crisis-state index all assume):
+        state 0 = Low-Vol Bull   (low vol, positive return, minimal drawdown)
+        state 1 = Transitional   (intermediate / neutral)
+        state 2 = High-Vol Bear  (elevated vol, negative return, drawdown)
+        state 3 = Crisis         (very high vol, very negative return, severe drawdown)
+
     We use a composite "crisis score" that combines:
     - Volatility (feature 1): higher vol = higher crisis
     - Return (feature 0): lower return = higher crisis
@@ -565,12 +569,19 @@ def _reorder_states(params: HMMParameters) -> HMMParameters:
         return (x - x_min) / (x_max - x_min)
     
     vol_norm = normalize(vols)
-    ret_norm = normalize(returns)  # Higher return = lower crisis
-    draw_norm = normalize(drawdowns)  # More negative drawdown = higher crisis
-    
-    # Crisis score: combines all three factors
-    # Higher vol + lower return + more negative drawdown = higher crisis
-    crisis_score = vol_norm + (1.0 - ret_norm) + draw_norm
+    ret_norm = normalize(returns)      # higher return -> lower crisis
+    draw_norm = normalize(drawdowns)   # drawdowns are <= 0, so the WORST
+                                       # (most negative) drawdown normalises to 0
+
+    # Crisis score: combines all three factors, each oriented so that a higher
+    # value means more crisis.
+    #   vol:      higher vol      -> vol_norm high          -> higher crisis
+    #   return:   lower return    -> (1 - ret_norm) high    -> higher crisis
+    #   drawdown: more negative   -> (1 - draw_norm) high    -> higher crisis
+    # NOTE: (1 - draw_norm) is required because normalize() maps the most
+    # negative (worst) drawdown to 0; using draw_norm directly would invert the
+    # drawdown contribution and corrupt the regime ordering.
+    crisis_score = vol_norm + (1.0 - ret_norm) + (1.0 - draw_norm)
     
     # Sort by crisis score (ascending)
     order = np.argsort(crisis_score)
@@ -1355,7 +1366,7 @@ def analyse_transitions(
     A:               np.ndarray,
     current_probs:   np.ndarray,
     horizons:        List[int] = [1, 5, 10, 21, 60],
-    crisis_state:    int       = 2,
+    crisis_state:    Optional[int] = None,
     state_labels:    Optional[Dict[int, str]] = None,
 ) -> TransitionAnalysis:
     """
@@ -1377,6 +1388,10 @@ def analyse_transitions(
     K = A.shape[0]
     if state_labels is None:
         state_labels = STATE_LABELS
+    if crisis_state is None:
+        # The worst (most severe) regime is the last index under the ascending
+        # crisis-score ordering enforced by _reorder_states.
+        crisis_state = K - 1
 
     # Stationary distribution
     pi = compute_stationary_distribution(A)
@@ -1856,19 +1871,24 @@ def compute_forward_risk(
 # Regime-specific base parameters (calibration anchors)
 # ---------------------------------------------------------------------------
 
-# Regime indices
-_BULL     = 0
-_BEAR     = 1
-_CRISIS   = 2
-_TRANS    = 3
+# Regime indices — MONOTONIC in severity, matching the ascending crisis-score
+# ordering produced by _reorder_states (index 0 = calmest, index 3 = worst).
+# This keeps labels, parameter grids and the crisis-state index mutually
+# consistent: the most extreme regime (index 3) is "Crisis" and receives the
+# most defensive optimizer parameters.
+_BULL     = 0   # Low-Vol Bull   (calmest)
+_TRANS    = 1   # Transitional   (neutral / choppy)
+_BEAR     = 2   # High-Vol Bear  (elevated vol, falling)
+_CRISIS   = 3   # Crisis         (extreme vol, sharp losses)
 
-# Base parameter grids — one row per regime [bull, bear, crisis, trans]
-_LAMBDA_RETURN  = np.array([1.5,  0.8,  0.3,  1.0])   # return weight
-_LAMBDA_VOL     = np.array([0.5,  1.5,  3.0,  1.0])   # variance penalty
-_LAMBDA_CVAR    = np.array([0.3,  0.8,  2.0,  0.6])   # CVaR penalty
-_LAMBDA_DRAWDOWN= np.array([0.1,  0.4,  0.8,  0.3])   # drawdown penalty
-_MAX_WEIGHT     = np.array([0.35, 0.25, 0.15, 0.25])  # per-asset max weight
-_TARGET_VOL     = np.array([0.18, 0.12, 0.08, 0.14])  # target portfolio vol
+# Base parameter grids — one row per regime [bull, transitional, bear, crisis]
+# Columns increase in defensiveness from Bull -> Crisis.
+_LAMBDA_RETURN  = np.array([1.5,  1.0,  0.8,  0.3])   # return weight
+_LAMBDA_VOL     = np.array([0.5,  1.0,  1.5,  3.0])   # variance penalty
+_LAMBDA_CVAR    = np.array([0.3,  0.6,  0.8,  2.0])   # CVaR penalty
+_LAMBDA_DRAWDOWN= np.array([0.1,  0.3,  0.4,  0.8])   # drawdown penalty
+_MAX_WEIGHT     = np.array([0.35, 0.25, 0.25, 0.15])  # per-asset max weight
+_TARGET_VOL     = np.array([0.18, 0.14, 0.12, 0.08])  # target portfolio vol
 
 
 # ---------------------------------------------------------------------------
@@ -2921,7 +2941,7 @@ def run_adaptive_intelligence(
         A             = regime_output.params.A,
         current_probs = regime_output.current_probs,
         horizons      = horizons + [1, 5, 10],
-        crisis_state  = 2,
+        crisis_state  = _CRISIS,
     )
     _log(f"  Mixing time: ~{trans_analysis.mixing_time} days")
     _log(f"  Stationary dist: " +
