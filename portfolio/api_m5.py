@@ -262,7 +262,23 @@ def get_institutional_optimisation(
             return result
 
         # ── Pack method outputs ───────────────────────────────────────────────
+        # Each method carries its OWN rebalance actions (current holdings ->
+        # that method's target weights) so the UI can show the trade list for
+        # whichever allocation the user is currently viewing — not only the
+        # best-Sharpe method.
         for mname, res in opt_results.items():
+            method_rebalance = []
+            for t, amt in (getattr(res, "rebalance_actions_rupees", None) or {}).items():
+                method_rebalance.append({
+                    "ticker":       t,
+                    "action":       "BUY" if amt > 0 else "SELL" if amt < 0 else "HOLD",
+                    "current_pct":  round(float(current_w.get(t, 0)), 4),
+                    "target_pct":   round(float(res.weights.get(t, 0)), 4),
+                    "rupees_delta": round(float(amt), 2),
+                })
+            # Sort largest absolute trades first for a clean, scannable table.
+            method_rebalance.sort(key=lambda r: abs(r["rupees_delta"]), reverse=True)
+
             result["methods"][mname] = {
                 "weights":         {t: round(float(w), 4) for t, w in res.weights.items()},
                 "expected_return": round(float(res.expected_return), 4),
@@ -271,6 +287,7 @@ def get_institutional_optimisation(
                 "cvar_95":         round(float(res.cvar_95), 4),
                 "health_score":    int(getattr(res, "allocation_health_score", 0)),
                 "solve_status":    str(res.solve_status),
+                "rebalance_actions": method_rebalance,
             }
 
         # ── Best method and recommendation ────────────────────────────────────

@@ -4,6 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ClearView Analytics | Portfolio Intelligence</title>
+<!-- Favicon: inline SVG mirroring the in-app brand logo (purple gradient tile
+     with the white partial ring used by .brand-logo). -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Cdefs%3E%3CradialGradient%20id='g'%20cx='32%25'%20cy='26%25'%20r='80%25'%3E%3Cstop%20offset='0%25'%20stop-color='%23d8b4fe'/%3E%3Cstop%20offset='45%25'%20stop-color='%23a855f7'/%3E%3Cstop%20offset='100%25'%20stop-color='%237c3aed'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect%20width='64'%20height='64'%20rx='20'%20fill='url(%23g)'/%3E%3Ccircle%20cx='32'%20cy='32'%20r='14'%20fill='none'%20stroke='%23ffffff'%20stroke-width='5'%20stroke-linecap='round'%20stroke-dasharray='66%2024'%20transform='rotate(35%2032%2032)'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -613,7 +616,7 @@ function MetricCard({ label, value, sub, badge, badgeType, dotClass, feature }) 
 }
 
 /* ---------------- param bar ---------------- */
-function ParamBar({ cfg, setCfg, onRun, loading, runLabel, onUploadCsv }) {
+function ParamBar({ cfg, setCfg, onRun, loading, runLabel, onUploadCsv, showPeriod }) {
   const upd = (k, v) => setCfg(c => ({ ...c, [k]: v }));
   return (
     <div className="parambar">
@@ -630,12 +633,14 @@ function ParamBar({ cfg, setCfg, onRun, loading, runLabel, onUploadCsv }) {
           </label>
         </div>
       )}
-      <div className="field" style={{ width: 100 }}>
-        <label>Period</label>
-        <select value={cfg.period} onChange={e => upd("period", e.target.value)}>
-          {["1y", "2y", "3y", "5y"].map(p => <option key={p} value={p}>{p}</option>)}
-        </select>
-      </div>
+      {showPeriod && (
+        <div className="field" style={{ width: 100 }}>
+          <label>Period</label>
+          <select value={cfg.period} onChange={e => upd("period", e.target.value)}>
+            {["1y", "2y", "5y", "10y", "ytd"].map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+        </div>
+      )}
       <div className="field" style={{ width: 150 }}>
         <label>Portfolio Value</label>
         <input type="number" value={cfg.portfolioValue} onChange={e => upd("portfolioValue", e.target.value)} />
@@ -842,7 +847,7 @@ function OptimizerView({ m5, pv, loading, error }) {
         <div className="metric feature">
           <div className="metric-label"><span className="metric-dot" />Selected Method</div>
           <div className="metric-val" style={{ fontSize: 22 }}>{pretty(active)}</div>
-          <div className="metric-foot">{active === best ? <span className="badge up">Recommended (best Sharpe)</span> : <span className="badge neutral">Alternative</span>}</div>
+          <div className="metric-foot">{active === best ? <span className="badge up">Highest Sharpe ratio</span> : <span className="badge neutral">Alternative method</span>}</div>
         </div>
         <MetricCard label="Expected Return" value={pct(cur.expected_return)} dotClass="g" sub="annualised" />
         <MetricCard label="Volatility" value={pct(cur.volatility)} sub="annualised" />
@@ -872,7 +877,7 @@ function OptimizerView({ m5, pv, loading, error }) {
               {methodKeys.map(k => (
                 <tr key={k} onClick={() => setSel(k)} style={{ cursor: "pointer" }} className={active === k ? "sel" : ""}>
                   <td style={{ color: active === k ? "var(--accent-2)" : "var(--text-dim)", fontWeight: 600 }}>
-                    {pretty(k)}{k === best ? <span className="badge up" style={{ marginLeft: 8 }}>Best</span> : null}
+                    {pretty(k)}{k === best ? <span className="badge up" style={{ marginLeft: 8 }}>Top Sharpe</span> : null}
                   </td>
                   <td className="mono pos">{pct(methods[k].expected_return)}</td>
                   <td className="mono">{pct(methods[k].volatility)}</td>
@@ -888,26 +893,33 @@ function OptimizerView({ m5, pv, loading, error }) {
         </div>
       </div>
 
-      {m5.rebalance_actions && m5.rebalance_actions.length ? (
+      {cur.rebalance_actions && cur.rebalance_actions.length ? (
         <div className="card section-gap">
-          <div className="card-head"><div><div className="card-title">Rebalancing Actions</div><div className="card-sub">Trades to reach the {pretty(best)} target</div></div></div>
+          <div className="card-head"><div>
+            <div className="card-title">Rebalance Worksheet — {pretty(active)}</div>
+            <div className="card-sub">How your current holdings differ from the {pretty(active)} weights. This is information only, not a recommendation — decide what, if anything, to act on yourself.</div>
+          </div></div>
           <table className="tbl">
-            <thead><tr><th>Ticker</th><th>Current</th><th>Target</th><th>Change (₹)</th><th>Action</th></tr></thead>
+            <thead><tr><th>Ticker</th><th>Current</th><th>{pretty(active)} weight</th><th>Difference (₹)</th><th>Direction</th></tr></thead>
             <tbody>
-              {m5.rebalance_actions.map((r, i) => {
+              {cur.rebalance_actions.map((r, i) => {
                 const act = (r.action || "").toUpperCase();
+                const dir = act === "BUY" ? "Increase" : act === "SELL" ? "Reduce" : "No change";
                 return (
                   <tr key={i}>
                     <td className="mono" style={{ color: "var(--text)" }}>{(r.ticker || "").replace(".NS", "")}</td>
                     <td className="mono">{pct(r.current_pct)}</td>
                     <td className="mono">{pct(r.target_pct)}</td>
                     <td className={"mono " + (r.rupees_delta >= 0 ? "pos" : "neg")}>{(r.rupees_delta >= 0 ? "+" : "-") + money(Math.abs(r.rupees_delta))}</td>
-                    <td><span className={"badge " + (act === "BUY" ? "up" : act === "SELL" ? "down" : "neutral")}>{r.action}</span></td>
+                    <td><span className={"badge " + (act === "BUY" ? "up" : act === "SELL" ? "down" : "neutral")}>{dir}</span></td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
+          <div style={{ fontSize: 11.5, color: "var(--text-mute)", marginTop: 12, lineHeight: 1.6 }}>
+            Figures show the gap between your current allocation and the {pretty(active)} model weights, based on your entered portfolio value. They are not financial advice or a prompt to trade. Any decision to buy or sell is yours alone — consider your own circumstances and a licensed advisor.
+          </div>
         </div>
       ) : null}
     </div>
@@ -983,9 +995,27 @@ function RegimeView({ m7, loading, error }) {
   const currentVol = m7.garch_current_vol;
   const forecast30 = m7.garch_30d_forecast;
 
-  const regimeColors = { "Low-Vol Bull": "var(--green)", "High-Vol Bear": "var(--amber)", "Crisis": "var(--red)", "Transitional": "var(--accent-2)" };
-  const regimeAbbr = { "Low-Vol Bull": "Bull", "High-Vol Bear": "Bear", "Crisis": "Crisis", "Transitional": "Trans." };
-  const orbColor = regimeColors[label] || "var(--accent)";
+  // Colour/abbreviate regimes by keyword so any label the engine produces
+  // (e.g. "Range-Bound", "Steady Bull", "High-Vol / Choppy") still renders
+  // sensibly — labels are chosen dynamically from absolute market conditions.
+  const regimeColor = (k) => {
+    const s = (k || "").toLowerCase();
+    if (s.includes("crisis")) return "var(--red)";
+    if (s.includes("bear")) return "var(--amber)";
+    if (s.includes("choppy") || s.includes("range")) return "var(--cyan)";
+    if (s.includes("bull")) return "var(--green)";
+    return "var(--accent-2)";
+  };
+  const regimeAbbrev = (k) => {
+    const s = (k || "").toLowerCase();
+    if (s.includes("crisis")) return "Crisis";
+    if (s.includes("bear")) return "Bear";
+    if (s.includes("choppy") || s.includes("range")) return "Choppy";
+    if (s.includes("bull")) return "Bull";
+    if (s.includes("trans")) return "Trans.";
+    return (k || "").slice(0, 6);
+  };
+  const orbColor = regimeColor(label);
 
   const horizons = ["1d", "5d", "10d", "21d", "63d"].filter(h => fwd[h] && Object.keys(fwd[h]).length);
   const regimeNames = Object.keys(probs).length ? Object.keys(probs) : (horizons.length ? Object.keys(fwd[horizons[0]]) : []);
@@ -1018,11 +1048,11 @@ function RegimeView({ m7, loading, error }) {
                 return (
                   <div key={k}>
                     <div className="dist-row" style={{ marginBottom: 6 }}>
-                      <span className="dist-key"><span className="dist-swatch" style={{ background: regimeColors[k] || "var(--accent)" }} />{k}</span>
+                      <span className="dist-key"><span className="dist-swatch" style={{ background: regimeColor(k) }} />{k}</span>
                       <span className="dist-val">{pct(v)}</span>
                     </div>
                     <div style={{ height: 7, background: "var(--track)", borderRadius: 6, overflow: "hidden", marginBottom: 12 }}>
-                      <div style={{ width: (v * 100) + "%", height: "100%", background: regimeColors[k] || "var(--accent)" }} />
+                      <div style={{ width: (v * 100) + "%", height: "100%", background: regimeColor(k) }} />
                     </div>
                   </div>
                 );
@@ -1045,7 +1075,7 @@ function RegimeView({ m7, loading, error }) {
           <div className="card-head"><div><div className="card-title">Forward Regime Probabilities</div><div className="card-sub">Projected by horizon</div></div></div>
           {horizons.length && regimeNames.length ? (
             <table className="tbl">
-              <thead><tr><th>Horizon</th>{regimeNames.map(k => <th key={k}>{regimeAbbr[k] || k.slice(0, 6)}</th>)}</tr></thead>
+              <thead><tr><th>Horizon</th>{regimeNames.map(k => <th key={k}>{regimeAbbrev(k)}</th>)}</tr></thead>
               <tbody>
                 {horizons.map(h => (
                   <tr key={h}>
@@ -1074,7 +1104,7 @@ function RegimeView({ m7, loading, error }) {
 /* ============================================================= */
 /* SETTINGS / ABOUT                                               */
 /* ============================================================= */
-function AboutView({ user }) {
+function AboutView({ user, onLogout }) {
   return (
     <div className="grid cols-2">
       <div className="card">
@@ -1082,6 +1112,10 @@ function AboutView({ user }) {
         <div className="kv"><span className="k">Username</span><span className="v">{user.username}</span></div>
         <div className="kv"><span className="k">Email</span><span className="v">{user.email}</span></div>
         <div className="kv"><span className="k">Member since</span><span className="v">{user.created_at ? new Date(user.created_at * 1000).toLocaleDateString() : "—"}</span></div>
+        <button className="btn" onClick={onLogout} style={{ marginTop: 18, width: "100%", color: "var(--red)", borderColor: "rgba(251,113,133,0.3)" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
+          Sign Out
+        </button>
       </div>
       <div className="card">
         <div className="card-head"><div className="card-title">About ClearView</div></div>
@@ -1182,6 +1216,30 @@ const NAV = [
 const TITLES = {
   dashboard: "Dashboard", optimizer: "Institutional Optimizer", stress: "Stress Testing",
   regime: "Regime Intelligence", about: "Account",
+};
+// Plain-English explanation of the page the user is currently on. Shown in the
+// sidebar so the context panel is genuinely useful instead of generic branding.
+const PAGE_INFO = {
+  dashboard: {
+    title: "Dashboard",
+    body: "Your portfolio at a glance. Upload your holdings to see how your money is split across stocks, your expected return, risk (Sharpe ratio, drawdown) and how your stocks move together.",
+  },
+  optimizer: {
+    title: "Optimizer",
+    body: "Compares two professional ways of splitting your money — Hierarchical Risk Parity and Black-Litterman — and shows the weights, risk and return for each so you can compare them side by side.",
+  },
+  stress: {
+    title: "Stress Test",
+    body: "Shows how your portfolio might react to tough market events — rate hikes, inflation spikes, crashes — estimating the potential loss in each scenario.",
+  },
+  regime: {
+    title: "Market Regime",
+    body: "Reads recent market behaviour to estimate which 'mood' the market is in — calm and rising, choppy, or stressed — and forecasts volatility for the weeks ahead.",
+  },
+  about: {
+    title: "Account",
+    body: "Your account details and app information. Sign out from here when you're done.",
+  },
 };
 
 function App() {
@@ -1324,8 +1382,8 @@ function App() {
         ))}
         <div className="sidebar-spacer" />
         <div className="side-foot">
-          <strong style={{ color: "var(--text-dim)" }}>Live engine</strong><br />
-          M3 · M4 · M5 · M7 quant modules running on FastAPI.
+          <strong style={{ color: "var(--text-dim)" }}>{(PAGE_INFO[view] || {}).title || "ClearView"}</strong><br />
+          {(PAGE_INFO[view] || {}).body || ""}
         </div>
         <div className="nav-item" onClick={logout} style={{ marginTop: 4 }}>
           <Ico d={ICONS.logout} />Sign Out
@@ -1340,7 +1398,7 @@ function App() {
           </div>
           <div className="crumb-title">{TITLES[view]}</div>
           <div className="topbar-right">
-            <div className="userchip">
+            <div className="userchip" onClick={() => setView("about")} style={{ cursor: "pointer" }} title="Open account settings">
               <div className="userav">{initials(user.username)}</div>
               {user.username}
             </div>
@@ -1349,13 +1407,13 @@ function App() {
 
         <div className="page">
           {showParams && (
-            <ParamBar cfg={cfg} setCfg={setCfg} onRun={run} loading={!!loading[view]} runLabel={runLabels[view]} onUploadCsv={view === "dashboard" ? handleCsv : null} />
+            <ParamBar cfg={cfg} setCfg={setCfg} onRun={run} loading={!!loading[view]} runLabel={runLabels[view]} onUploadCsv={view === "dashboard" ? handleCsv : null} showPeriod={view === "dashboard"} />
           )}
           {view === "dashboard" && <DashboardView user={user} m3={results.m3} portfolio={portfolio} loading={!!loading.dashboard} error={errors.dashboard} />}
           {view === "optimizer" && <OptimizerView m5={results.m5} pv={cfg.portfolioValue} loading={!!loading.optimizer} error={errors.optimizer} />}
           {view === "stress" && <StressView m4={results.m4} loading={!!loading.stress} error={errors.stress} />}
           {view === "regime" && <RegimeView m7={results.m7} loading={!!loading.regime} error={errors.regime} />}
-          {view === "about" && <AboutView user={user} />}
+          {view === "about" && <AboutView user={user} onLogout={logout} />}
         </div>
       </main>
     </div>

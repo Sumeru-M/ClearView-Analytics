@@ -661,7 +661,12 @@ def m7_regime(req: M7Request, _username: str = Depends(_auth_user)) -> JSONRespo
 @app.get("/")
 def serve_frontend():
     if FRONTEND_FILE.exists():
-        return FileResponse(FRONTEND_FILE)
+        # The UI is a single in-place HTML file. Disable caching so edits/redeploys
+        # are picked up on the next load instead of serving a stale cached page.
+        return FileResponse(
+            FRONTEND_FILE,
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+        )
     return JSONResponse({"message": "Frontend file not found. Expected frontend/index.html"})
 
 

@@ -201,10 +201,20 @@ def build_observation_matrix(
 
     feat_return = returns.mean(axis=1)                         # (T,)
 
-    # Rolling realised vol — use vectorised approach
+    # Rolling realised vol of the equal-weighted basket.
+    # IMPORTANT: this must be the *time-series* volatility of the portfolio
+    # return series (feat_return), NOT the pooled std of the full (window × N)
+    # block of individual stock returns. Pooling conflates cross-sectional
+    # dispersion BETWEEN stocks with the portfolio's own volatility and
+    # materially overstates it (e.g. ~31% pooled vs ~21% portfolio for a
+    # 5-stock NSE basket), which biased the HMM toward high-vol/"Crisis"
+    # states even in calm markets. Using feat_return keeps feature 1
+    # consistent with the return (feature 0), drawdown (feature 3) and the
+    # GARCH conditional-vol estimate, which are all defined on the same
+    # equal-weighted basket.
     feat_vol = np.full(T, np.nan)
     for t in range(window, T):
-        feat_vol[t] = returns[t - window:t].std(ddof=1) * np.sqrt(252)
+        feat_vol[t] = feat_return[t - window:t].std(ddof=1) * np.sqrt(252)
 
     # Rolling average pairwise correlation
     feat_corr = np.full(T, np.nan)
@@ -555,44 +565,86 @@ def _reorder_states(params: HMMParameters) -> HMMParameters:
     - Drawdown (feature 3): more negative = higher crisis
     """
     K = params.means.shape[0]
-    
-    # Extract features
-    returns = params.means[:, 0]      # Feature 0: mean return
-    vols = params.means[:, 1]         # Feature 1: volatility
-    drawdowns = params.means[:, 3]    # Feature 3: drawdown (negative values)
-    
-    # Normalize each feature to [0, 1]
-    def normalize(x):
-        x_min, x_max = x.min(), x.max()
-        if x_max == x_min:
-            return np.zeros_like(x)
-        return (x - x_min) / (x_max - x_min)
-    
-    vol_norm = normalize(vols)
-    ret_norm = normalize(returns)      # higher return -> lower crisis
-    draw_norm = normalize(drawdowns)   # drawdowns are <= 0, so the WORST
-                                       # (most negative) drawdown normalises to 0
 
-    # Crisis score: combines all three factors, each oriented so that a higher
-    # value means more crisis.
-    #   vol:      higher vol      -> vol_norm high          -> higher crisis
-    #   return:   lower return    -> (1 - ret_norm) high    -> higher crisis
-    #   drawdown: more negative   -> (1 - draw_norm) high    -> higher crisis
-    # NOTE: (1 - draw_norm) is required because normalize() maps the most
-    # negative (worst) drawdown to 0; using draw_norm directly would invert the
-    # drawdown contribution and corrupt the regime ordering.
-    crisis_score = vol_norm + (1.0 - ret_norm) + (1.0 - draw_norm)
-    
-    # Sort by crisis score (ascending)
-    order = np.argsort(crisis_score)
-    
+    # Extract features (emission means).
+    returns   = params.means[:, 0]    # Feature 0: mean DAILY return
+    vols      = params.means[:, 1]    # Feature 1: annualised volatility
+    drawdowns = params.means[:, 3]    # Feature 3: drawdown (<= 0)
+
+    # ── Distress score (return-dominant) ─────────────────────────────────────
+    # A crisis is fundamentally a *loss* regime: high volatility alone does not
+    # make a crisis. The previous implementation normalised each feature to
+    # [0,1] and summed vol + (1-ret) + (1-drawdown) with EQUAL weight. Because
+    # normalisation is purely relative across the 4 fitted states, a regime with
+    # the highest volatility was ranked "most crisis" even when its return was
+    # strongly POSITIVE — so a high-vol *bull/recovery* state was mislabelled
+    # "Crisis" and, in calm-but-choppy markets, the current day fell into it.
+    #
+    # We now score severity on the raw annualised economics with RETURN as the
+    # dominant term, so the ordering is monotonic in genuine distress:
+    #   distress = 3·(−annualised_return) + 1·volatility + 0.5·(−drawdown)
+    # Lower distress = calmer/bullish (index 0); higher = more severe (index K-1).
+    ret_ann  = returns * 252.0
+    distress = (-ret_ann) * 3.0 + vols * 1.0 + (-drawdowns) * 0.5
+
+    # Sort by distress (ascending: index 0 = calmest, index K-1 = worst)
+    order = np.argsort(distress)
+
     # Apply permutation to all parameters
     new_means = params.means[order]
     new_covs = params.covs[order]
     new_pi = params.pi[order]
     new_A = params.A[np.ix_(order, order)]
 
+    # ── Absolute, return-aware labelling ─────────────────────────────────────
+    # Assign the human-readable regime names from the ABSOLUTE characteristics
+    # of the (now ordered) states, not from fixed index slots. This guarantees
+    # we never attach the word "Crisis"/"Bear" to a positive-return regime.
+    # The chosen names are written into the module-global STATE_LABELS so every
+    # downstream to_dict() (probabilities, transition matrix, forward paths)
+    # stays consistent with the banner.
+    STATE_LABELS.clear()
+    STATE_LABELS.update(_choose_regime_labels(new_means))
+
     return HMMParameters(pi=new_pi, A=new_A, means=new_means, covs=new_covs)
+
+
+def _choose_regime_labels(means: np.ndarray) -> Dict[int, str]:
+    """
+    Pick economically-honest, unique regime labels from severity-ordered states.
+
+    ``means`` is the (K, M) emission-mean matrix AFTER severity ordering
+    (index 0 = calmest, index K-1 = worst). Labels are chosen from the absolute
+    annualised return / volatility of the worst regime so that:
+
+      * a regime is only called "Crisis" when it is a genuine high-volatility
+        loss regime (deeply negative return AND high vol);
+      * a market whose worst fitted regime is still only a mild pullback is
+        labelled "High-Vol Bear" at worst — never "Crisis";
+      * a broadly bullish fit (even the worst regime has non-negative return)
+        uses purely bull/transitional language.
+
+    Returns a {state_index: label} dict with K distinct labels.
+    """
+    K = means.shape[0]
+    ret_ann = means[:, 0] * 252.0
+    vol_ann = means[:, 1]
+    worst_ret = float(ret_ann[-1])
+    worst_vol = float(vol_ann[-1])
+
+    if worst_ret <= -0.05 and worst_vol >= 0.25:
+        # Genuine crisis regime present.
+        names = ["Low-Vol Bull", "Transitional", "High-Vol Bear", "Crisis"]
+    elif worst_ret < 0.0:
+        # Worst regime is a drawdown/bear, but not a crisis.
+        names = ["Low-Vol Bull", "Transitional", "Range-Bound", "High-Vol Bear"]
+    else:
+        # Even the worst regime has non-negative returns: a broadly rising market.
+        names = ["Low-Vol Bull", "Steady Bull", "Transitional", "High-Vol / Choppy"]
+
+    if K != len(names):
+        names = (names + [f"Regime {i}" for i in range(K)])[:K]
+    return {i: names[i] for i in range(K)}
 
 
 # ---------------------------------------------------------------------------
