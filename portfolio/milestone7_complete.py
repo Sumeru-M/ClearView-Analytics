@@ -253,12 +253,31 @@ def _log_gaussian(x: np.ndarray, mu: np.ndarray, cov: np.ndarray) -> float:
         return LOG_EPS
 
 
-def _log_emission_matrix(obs: np.ndarray, params: HMMParameters) -> np.ndarray:
+def _log_emission_matrix(
+    obs: np.ndarray, params: HMMParameters, temperature: float = 1.0
+) -> np.ndarray:
     """
     Compute B[t, k] = log P(O_t | S_t=k) for all t, k.
 
     Vectorised: calls scipy multivariate_normal.logpdf on the full obs matrix
     per state (one call per state, not per time step), giving ~T× speedup.
+
+    Parameters
+    ----------
+    temperature : float
+        Divides the log-likelihood before it enters the forward/backward
+        recursion. `obs` is built from overlapping rolling windows (see
+        `build_observation_matrix`), so consecutive rows share most of their
+        underlying daily data and are far from conditionally independent
+        given the state — the assumption the HMM likelihood relies on.
+        Left untempered, the forward pass multiplies ~T highly correlated
+        "observations" together and the filtered posterior collapses to
+        ~100% certainty in a single state regardless of the input series
+        (see M7 regime-collapse investigation). Dividing by `temperature`
+        (roughly the rolling window length, i.e. the run of days sharing
+        the same window) rescales the accumulated evidence down toward the
+        effective sample size instead of the raw, overlapping row count.
+        temperature=1.0 recovers the untempered likelihood.
 
     Returns
     -------
@@ -277,6 +296,8 @@ def _log_emission_matrix(obs: np.ndarray, params: HMMParameters) -> np.ndarray:
                 log_B[t, k] = _log_gaussian(obs[t], params.means[k], params.covs[k])
     # Replace any -inf / nan with large negative (avoids propagation issues)
     log_B = np.where(np.isfinite(log_B), log_B, LOG_EPS)
+    if temperature != 1.0:
+        log_B = log_B / temperature
     return log_B
 
 
@@ -393,7 +414,7 @@ def _compute_posteriors(
 # Viterbi algorithm
 # ---------------------------------------------------------------------------
 
-def viterbi(obs: np.ndarray, params: HMMParameters) -> np.ndarray:
+def viterbi(obs: np.ndarray, params: HMMParameters, temperature: float = 1.0) -> np.ndarray:
     """
     Viterbi algorithm for most probable state sequence.
 
@@ -404,11 +425,15 @@ def viterbi(obs: np.ndarray, params: HMMParameters) -> np.ndarray:
 
     Backtrack from T to 1 to recover the most probable path.
 
+    `temperature` must match the value used to fit `params` (see
+    `_log_emission_matrix`) so the decoded path is consistent with the
+    filtered/smoothed probabilities.
+
     Returns
     -------
     path : (T,) integer array of state indices
     """
-    log_B  = _log_emission_matrix(obs, params)
+    log_B  = _log_emission_matrix(obs, params, temperature=temperature)
     T, K   = log_B.shape
     log_A  = np.log(params.A + 1e-300)
     log_pi = np.log(params.pi + 1e-300)
@@ -632,12 +657,20 @@ def _choose_regime_labels(means: np.ndarray) -> Dict[int, str]:
     worst_ret = float(ret_ann[-1])
     worst_vol = float(vol_ann[-1])
 
-    if worst_ret <= -0.05 and worst_vol >= 0.25:
-        # Genuine crisis regime present.
+    # Bear/Crisis language requires BOTH a genuine loss AND genuinely elevated
+    # volatility — a mild negative drift at low vol is a pullback, not a bear
+    # market, and must never be labelled "High-Vol Bear"/"Crisis" (that was the
+    # calibration bug that made benign ~18%-vol markets read as bears).
+    if worst_ret <= -0.05 and worst_vol >= 0.30:
+        # Genuine crisis regime present: deep loss AND high volatility.
         names = ["Low-Vol Bull", "Transitional", "High-Vol Bear", "Crisis"]
-    elif worst_ret < 0.0:
-        # Worst regime is a drawdown/bear, but not a crisis.
+    elif worst_ret < -0.02 and worst_vol >= 0.20:
+        # Worst regime is a real high-vol drawdown/bear, but not a crisis.
         names = ["Low-Vol Bull", "Transitional", "Range-Bound", "High-Vol Bear"]
+    elif worst_ret < 0.0:
+        # Mild negative drift at contained volatility: a soft pullback / chop,
+        # not a bear. Keep the language calm.
+        names = ["Low-Vol Bull", "Steady Bull", "Transitional", "Range-Bound"]
     else:
         # Even the worst regime has non-negative returns: a broadly rising market.
         names = ["Low-Vol Bull", "Steady Bull", "Transitional", "High-Vol / Choppy"]
@@ -658,6 +691,7 @@ def fit_hmm(
     tol:         float = 1e-6,
     n_restarts:  int   = 3,
     seed:        int   = 42,
+    temperature: float = 1.0,
 ) -> Tuple[HMMParameters, float]:
     """
     Fit HMM via Baum–Welch (Expectation-Maximisation).
@@ -670,12 +704,17 @@ def fit_hmm(
 
     Parameters
     ----------
-    obs        : (T, M) observation matrix
-    K          : number of latent states
-    max_iter   : maximum EM iterations per restart
-    tol        : convergence tolerance on log-likelihood
-    n_restarts : number of random restarts
-    seed       : base random seed
+    obs         : (T, M) observation matrix
+    K           : number of latent states
+    max_iter    : maximum EM iterations per restart
+    tol         : convergence tolerance on log-likelihood
+    n_restarts  : number of random restarts
+    seed        : base random seed
+    temperature : emission-likelihood tempering, see `_log_emission_matrix`.
+                  Applied identically in the E-step here and in the final
+                  filtered/smoothed/Viterbi pass in `run_hmm`, so the
+                  responsibilities used to fit the means/covariances are
+                  consistent with the probabilities that get reported.
 
     Returns
     -------
@@ -691,7 +730,7 @@ def fit_hmm(
 
         for iteration in range(max_iter):
             # E-step
-            log_B     = _log_emission_matrix(obs, params)
+            log_B     = _log_emission_matrix(obs, params, temperature=temperature)
             log_alpha, ll = _forward_log(log_B, params)
             log_beta  = _backward_log(log_B, params)
             gamma, xi = _compute_posteriors(log_alpha, log_beta, log_B, params)
@@ -711,6 +750,45 @@ def fit_hmm(
     return best_params, best_ll
 
 
+def _emission_temperature(obs: np.ndarray, window: int) -> float:
+    """
+    Data-driven tempering factor for the emission log-likelihood.
+
+    `build_observation_matrix` derives each row from a `window`-day rolling
+    calculation, so consecutive rows share most of their underlying daily data
+    and are far from conditionally independent given the state. Feeding all T
+    overlapping rows into the forward pass compounds the redundant evidence and
+    collapses the filtered posterior to ~100% certainty in a single state,
+    regardless of the input series (the M7 regime-collapse failure mode).
+
+    The right amount of dampening is the *per-observation redundancy* of the
+    binding (most persistent) feature — T / ESS, where ESS is the effective
+    independent sample size measured from that feature's autocorrelation
+    (`_effective_sample_size`). Because the persistent vol / correlation /
+    drawdown features co-move, the joint 4-D likelihood accumulates redundancy
+    faster than any single feature implies: empirically the collapse→diffuse
+    boundary sits right at T / min(ESS), so a factor of 2 on the binding
+    feature's redundancy is needed to clear that knife-edge into the stable
+    regime (validated on NSE baskets — a broad large-cap basket then reads a
+    calm, low-confidence posterior instead of a pinned 0.985 on one state).
+
+    Floored at `window` (never *less* tempered than the raw overlap) and capped
+    at 120 so the posterior never washes out to a flat, uninformative
+    distribution. `temperature = 1.0` (passed explicitly) recovers the raw,
+    untempered likelihood.
+    """
+    T = len(obs)
+    if T == 0:
+        return float(window)
+    ess = [_effective_sample_size(obs[:, j]) for j in range(obs.shape[1])]
+    # Features with no autocorrelation (ESS ~ T, e.g. the mean-return feature)
+    # carry no redundancy; including them would understate the tempering the
+    # persistent features actually demand, so bind on the persistent subset.
+    persistent = [e for e in ess if e < 0.5 * T] or ess
+    redundancy = T / max(min(persistent), 1)
+    return float(np.clip(round(2.0 * redundancy), float(window), 120.0))
+
+
 # ---------------------------------------------------------------------------
 # Full inference
 # ---------------------------------------------------------------------------
@@ -722,6 +800,7 @@ def run_hmm(
     max_iter:      int   = 200,
     tol:           float = 1e-6,
     n_restarts:    int   = 3,
+    emission_temperature: Optional[float] = None,
 ) -> RegimeOutput:
     """
     End-to-end HMM fitting and inference.
@@ -737,6 +816,21 @@ def run_hmm(
     for any forward-looking decision (no look-ahead bias).
     Smoothed probabilities are reported for research insight only.
 
+    emission_temperature : dampens the emission log-likelihood before it
+        enters the forward/backward/Viterbi recursions (see
+        `_log_emission_matrix`). `build_observation_matrix` computes each
+        row from a `window`-day rolling calculation, so consecutive rows
+        share most of their underlying daily data and are nowhere near
+        conditionally independent given the state. Left at 1.0, the
+        forward pass compounds hundreds of these correlated "observations"
+        and the filtered posterior collapses to ~100% certainty in a
+        single regime regardless of the input series. When left as ``None``
+        the temperature is derived from the data via
+        ``_emission_temperature`` (roughly twice the binding feature's
+        measured redundancy), which rescales the accumulated evidence toward
+        the effective (non-overlapping) sample size instead of the raw row
+        count.
+
     Returns
     -------
     RegimeOutput
@@ -748,11 +842,19 @@ def run_hmm(
             "Need at least K×10 rows after rolling window."
         )
 
+    temperature = (
+        _emission_temperature(obs, window)
+        if emission_temperature is None else emission_temperature
+    )
+
     # Fit
-    params, ll = fit_hmm(obs, K=K, max_iter=max_iter, tol=tol, n_restarts=n_restarts)
+    params, ll = fit_hmm(
+        obs, K=K, max_iter=max_iter, tol=tol, n_restarts=n_restarts,
+        temperature=temperature,
+    )
 
     # E-step on final params for smoothed posteriors
-    log_B                  = _log_emission_matrix(obs, params)
+    log_B                  = _log_emission_matrix(obs, params, temperature=temperature)
     log_alpha, _           = _forward_log(log_B, params)
     log_beta               = _backward_log(log_B, params)
     smoothed, _            = _compute_posteriors(log_alpha, log_beta, log_B, params)
@@ -768,12 +870,21 @@ def run_hmm(
     filtered /= filtered.sum(axis=1, keepdims=True)
 
     # Viterbi path
-    path = viterbi(obs, params)
+    path = viterbi(obs, params, temperature=temperature)
 
     # Per-regime statistics
     regime_stats = _compute_regime_stats(obs, smoothed, path, params)
 
-    current_probs  = filtered[-1]
+    # Robust "current regime": the single last-step filtered vector sits on a
+    # decision boundary and flips between adjacent states with tiny changes in
+    # the last observation. Average the filtered posterior over the trailing
+    # sessions so the reported regime is stable and reflects the recent state,
+    # not a one-day coin-flip. Uncertainty is preserved — a genuinely diffuse
+    # tail averages to a diffuse (high-entropy) vector rather than a false
+    # near-certainty.
+    _trail = min(5, len(filtered))
+    current_probs  = filtered[-_trail:].mean(axis=0)
+    current_probs  = current_probs / current_probs.sum()
     current_regime = int(np.argmax(current_probs))
 
     return RegimeOutput(
@@ -2398,6 +2509,7 @@ def _bootstrap_regime_ci(
     n_boot:    int   = 300,
     seed:      int   = 42,
     conf:      float = 0.95,
+    temperature: float = 1.0,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Bootstrap confidence intervals on filtered regime probabilities γ_T.
@@ -2445,7 +2557,7 @@ def _bootstrap_regime_ci(
                 means = means_new,
                 covs  = params.covs,
             )
-            log_B         = _log_emission_matrix(obs, p_boot)
+            log_B         = _log_emission_matrix(obs, p_boot, temperature=temperature)
             log_alpha, _  = _forward_log(log_B, p_boot)
             gamma_T       = np.exp(log_alpha[-1] - log_alpha[-1].max())
             gamma_T      /= gamma_T.sum()
@@ -2643,6 +2755,7 @@ def quantify_uncertainty(
     portfolio_returns: np.ndarray,
     n_boot:           int = 300,
     seed:             int = 42,
+    emission_temperature: float = 1.0,
 ) -> UncertaintyReport:
     """
     Full uncertainty quantification across all model components.
@@ -2659,6 +2772,9 @@ def quantify_uncertainty(
     portfolio_returns : (T,) portfolio return series (for ESS)
     n_boot            : bootstrap iterations for CI estimation
     seed              : random seed
+    emission_temperature : must match the temperature `regime_output.params`
+        was fitted with (see `run_hmm`), so the bootstrap CI is computed on
+        the same likelihood scale as the reported point estimate.
 
     Returns
     -------
@@ -2670,7 +2786,9 @@ def quantify_uncertainty(
     K      = params.K
 
     # 1. Bootstrap CI on regime probabilities
-    ci_lower, ci_upper = _bootstrap_regime_ci(obs, params, n_boot=n_boot, seed=seed)
+    ci_lower, ci_upper = _bootstrap_regime_ci(
+        obs, params, n_boot=n_boot, seed=seed, temperature=emission_temperature,
+    )
     current_probs      = regime_output.current_probs
     regime_prob_ci     = {
         STATE_LABELS.get(k, str(k)): {
@@ -3085,6 +3203,7 @@ def run_adaptive_intelligence(
         portfolio_returns = port_returns,
         n_boot            = uncertainty_n_boot,
         seed              = 42,
+        emission_temperature = 21.0,   # matches run_hmm's window=21 above
     )
     _log(f"  ESS={uncertainty.effective_sample_size}  "
          f"Regime CI widths: " +
