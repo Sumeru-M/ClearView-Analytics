@@ -131,6 +131,10 @@ class RegimeOutput:
     regime_stats    : per-regime mean/vol/persistence
     current_regime  : most probable regime at time T
     current_probs   : (K,)  filtered probabilities at time T
+    posterior_temperature : emission temperature used to compute the reported
+        filtered `current_probs` (decoupled from the fit temperature). Carried
+        here so downstream uncertainty bootstrapping uses the same likelihood
+        scale as the point estimate.
     """
     filtered_probs:  np.ndarray
     smoothed_probs:  np.ndarray
@@ -140,6 +144,7 @@ class RegimeOutput:
     regime_stats:    Dict
     current_regime:  int
     current_probs:   np.ndarray
+    posterior_temperature: float = 1.0
 
     def to_dict(self) -> Dict:
         return {
@@ -801,6 +806,7 @@ def run_hmm(
     tol:           float = 1e-6,
     n_restarts:    int   = 3,
     emission_temperature: Optional[float] = None,
+    fit_temperature: float = 1.0,
 ) -> RegimeOutput:
     """
     End-to-end HMM fitting and inference.
@@ -816,20 +822,28 @@ def run_hmm(
     for any forward-looking decision (no look-ahead bias).
     Smoothed probabilities are reported for research insight only.
 
-    emission_temperature : dampens the emission log-likelihood before it
-        enters the forward/backward/Viterbi recursions (see
-        `_log_emission_matrix`). `build_observation_matrix` computes each
-        row from a `window`-day rolling calculation, so consecutive rows
-        share most of their underlying daily data and are nowhere near
-        conditionally independent given the state. Left at 1.0, the
-        forward pass compounds hundreds of these correlated "observations"
-        and the filtered posterior collapses to ~100% certainty in a
-        single regime regardless of the input series. When left as ``None``
-        the temperature is derived from the data via
-        ``_emission_temperature`` (roughly twice the binding feature's
-        measured redundancy), which rescales the accumulated evidence toward
-        the effective (non-overlapping) sample size instead of the raw row
-        count.
+    Two DISTINCT temperatures are used, deliberately decoupled:
+
+    fit_temperature : tempers the emission likelihood during Baum–Welch *and*
+        during the internal smoothed / Viterbi / per-regime decoding. It must
+        stay low (default 1.0, i.e. untempered) — tempering the FIT flattens the
+        transition matrix toward fast mixing (regime durations collapse to a few
+        days) and pushes the filtered posterior onto the stationary
+        distribution, which makes the forward regime probabilities identical at
+        every horizon (`current_probs @ A^h ≈ current_probs`). Untempered
+        fitting recovers realistic, persistent regime dynamics.
+
+    emission_temperature : dampens the emission likelihood for the REPORTED
+        filtered `current_probs` only (see `_log_emission_matrix`).
+        `build_observation_matrix` computes each row from a `window`-day rolling
+        calculation, so consecutive rows share most of their underlying daily
+        data and are nowhere near conditionally independent given the state.
+        Applied to the causal forward pass alone, the accumulated evidence would
+        collapse the current-state posterior to ~100% certainty regardless of
+        the input series. When left as ``None`` this posterior temperature is
+        derived from the data via ``_emission_temperature`` (~twice the binding
+        feature's measured redundancy). Crucially it does NOT touch the fitted
+        transition matrix, so forward propagation stays dynamic.
 
     Returns
     -------
@@ -842,25 +856,36 @@ def run_hmm(
             "Need at least K×10 rows after rolling window."
         )
 
-    temperature = (
+    post_temperature = (
         _emission_temperature(obs, window)
         if emission_temperature is None else emission_temperature
     )
 
-    # Fit
+    # ── Fit on the (untempered) likelihood ────────────────────────────────────
+    # Learn the transition matrix and emission parameters at fit_temperature so
+    # regime persistence is realistic. Tempering the fit is what previously
+    # flattened A and stagnated the forward horizon probabilities.
     params, ll = fit_hmm(
         obs, K=K, max_iter=max_iter, tol=tol, n_restarts=n_restarts,
-        temperature=temperature,
+        temperature=fit_temperature,
     )
 
-    # E-step on final params for smoothed posteriors
-    log_B                  = _log_emission_matrix(obs, params, temperature=temperature)
-    log_alpha, _           = _forward_log(log_B, params)
-    log_beta               = _backward_log(log_B, params)
-    smoothed, _            = _compute_posteriors(log_alpha, log_beta, log_B, params)
+    # ── Internal decoding at the fit temperature ──────────────────────────────
+    # Smoothed posteriors, Viterbi path and per-regime stats describe the
+    # historical decoding and stay on the same likelihood scale as the fit.
+    log_B_fit              = _log_emission_matrix(obs, params, temperature=fit_temperature)
+    log_alpha_fit, _       = _forward_log(log_B_fit, params)
+    log_beta               = _backward_log(log_B_fit, params)
+    smoothed, _            = _compute_posteriors(log_alpha_fit, log_beta, log_B_fit, params)
+    path                   = viterbi(obs, params, temperature=fit_temperature)
+    regime_stats           = _compute_regime_stats(obs, smoothed, path, params)
 
-    # Filtered probabilities (causal — only forward pass)
-    filtered = np.exp(log_alpha - log_alpha.max(axis=1, keepdims=True))
+    # ── Reported filtered posterior at the calibrated posterior temperature ───
+    # Only the causal current-state estimate is tempered, to undo the
+    # overlapping-window overconfidence without distorting the learned dynamics.
+    log_B_post             = _log_emission_matrix(obs, params, temperature=post_temperature)
+    log_alpha_post, _      = _forward_log(log_B_post, params)
+    filtered = np.exp(log_alpha_post - log_alpha_post.max(axis=1, keepdims=True))
     filtered /= filtered.sum(axis=1, keepdims=True)
 
     # Prevent exactly 0% or 100% certainty — apply a small floor
@@ -868,12 +893,6 @@ def run_hmm(
     _prob_floor = 0.005   # 0.5% minimum per regime
     filtered = np.maximum(filtered, _prob_floor)
     filtered /= filtered.sum(axis=1, keepdims=True)
-
-    # Viterbi path
-    path = viterbi(obs, params, temperature=temperature)
-
-    # Per-regime statistics
-    regime_stats = _compute_regime_stats(obs, smoothed, path, params)
 
     # Robust "current regime": the single last-step filtered vector sits on a
     # decision boundary and flips between adjacent states with tiny changes in
@@ -896,6 +915,7 @@ def run_hmm(
         regime_stats    = regime_stats,
         current_regime  = current_regime,
         current_probs   = current_probs,
+        posterior_temperature = float(post_temperature),
     )
 
 
@@ -3203,7 +3223,9 @@ def run_adaptive_intelligence(
         portfolio_returns = port_returns,
         n_boot            = uncertainty_n_boot,
         seed              = 42,
-        emission_temperature = 21.0,   # matches run_hmm's window=21 above
+        # Match the posterior temperature run_hmm used for current_probs so the
+        # bootstrap CI is on the same likelihood scale as the point estimate.
+        emission_temperature = regime_output.posterior_temperature,
     )
     _log(f"  ESS={uncertainty.effective_sample_size}  "
          f"Regime CI widths: " +
