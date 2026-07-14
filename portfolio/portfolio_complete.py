@@ -71,7 +71,10 @@ import os
 import re
 import time
 import cvxpy as cp
-import matplotlib.pyplot as plt
+try:  # matplotlib is optional: only needed for local plotting, not the API
+    import matplotlib.pyplot as plt
+except ImportError:
+    plt = None
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
